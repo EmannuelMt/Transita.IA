@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { onAuthChange } from './firebase/auth';
-import Navbar from './components/Navbar/Navbar';
-import Home from './pages/Home/Home';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
-import Footer from './components/Footer/Footer';
-import BackToTop from './components/BackToTop/BackToTop';
-import NotFound from './pages/NotFound/NotFound';
-import Search from './pages/Search/Search';
+import Navbar from './components/Navbar/Navbar.jsx';
+import Home from './pages/Home/Home.jsx';
+import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
+import Footer from './components/Footer/Footer.jsx';
+import BackToTop from './components/BackToTop/BackToTop.jsx';
+import NotFound from './pages/NotFound/NotFound.jsx';
+import Search from './pages/Search/Search.jsx';
 import { api } from './services/api';
-import GlobalLoading from './components/GlobalLoading/GlobalLoading';
-import Dashboard from './pages/dashboard/Dashboard';
-import Login from './components/auth/Login';
-import CompanyProfile from './pages/profiles/CompanyProfile';
-import EmployeeProfile from './pages/profiles/EmployeeProfile';
+import GlobalLoading from './components/GlobalLoading/GlobalLoading.jsx';
+import Dashboard from './pages/dashboard/Dashboard.jsx';
+import Login from './components/auth/Login.jsx';
+import CompanyProfile from './pages/profiles/CompanyProfile.jsx';
+import EmployeeProfile from './pages/profiles/EmployeeProfile.jsx';
 import { NotificationProvider } from './contexts/NotificationContext';
-import Support from './pages/Support/Support';
-import Planos from './pages/Planos/Planos';
-import EmployeeAuth from './components/Auth/EmployeeAuth';
+import Support from './pages/Support/Support.jsx';
+import Planos from './pages/Planos/Planos.jsx';
+import EmployeeAuth from './components/Auth/EmployeeAuth.jsx';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
