@@ -48,11 +48,24 @@ import { TbRoute, TbReceipt } from 'react-icons/tb';
 
 import { useNotifications } from '../../contexts/NotificationContext';
 import NotificationPanel from '../NotificationPanel/NotificationPanel';
-// import { useAuth } from '../../contexts/AuthContext'; // DESATIVADO
 
-import Logotipofretevelocidadelaranja from '../../assets/images/Logo/Logotipofretevelocidadelaranja.png';
+
+import logoBanner from '../../assets/images/Logo/Logotipofretevelocidadelaranja.png';
 import './Navbar.css';
 import { searchIndex } from '../../services/searchIndex';
+
+// Fallback COLORS object — usa variáveis CSS do projeto quando possível
+const COLORS = {
+  blue: {
+    vibrant: 'var(--blue-vibrant)',
+    primary: 'var(--blue-primary)',
+    dark: 'var(--blue-dark)'
+  },
+  orange: {
+    primary: 'var(--orange-primary)',
+    soft: 'var(--orange-soft)'
+  }
+};
 
 // Componente de ícone animado premium otimizado
 const PremiumIcon = memo(({ icon: Icon, isActive, size = 20, color, animation = 'float' }) => {
@@ -534,136 +547,95 @@ const PremiumSidebar = ({ onLogout }) => {
 
   const navigationItems = [
     {
-      path: '/',
-      icon: FiHome,
-      label: 'Início',
-      description: 'Página inicial do sistema',
-      color: 'var(--blue-vibrant)'
+    path: '/',
+    label: 'Home',
+    icon: FiHome,
+    description: 'Página inicial do sistema',
+      color: COLORS.blue.vibrant,
+      animation: 'subtle'
     },
     {
       path: '/dashboard',
-      icon: RiDashboardLine,
+      icon: FiBarChart2,
       label: 'Dashboard',
       description: 'Métricas e analytics em tempo real',
-      color: 'var(--blue-primary)',
-      badge: 'LIVE'
+      color: COLORS.blue.primary,
+      animation: 'float'
     },
     {
-      path: '/Multas',
+      path: '/multas',
       icon: FiAlertTriangle,
       label: 'Multas',
       description: 'Gestão inteligente de multas',
-      color: 'var(--orange-primary)',
-      badge: 'NOVO'
+      color: COLORS.orange.primary,
+      animation: 'shake'
     },
     {
-      path: '/monitoramento',
+      path: '/login',
       icon: FiNavigation,
-      label: 'Monitoramento',
-      description: 'Rastreamento em tempo real',
-      color: 'var(--blue-dark)',
-      badge: 'GPS'
+      label: 'Empresa ',
+      description: 'Panel de Login e Criação de Conta',
+      color: COLORS.blue.dark,
+      animation: 'spin'
     },
     {
-      path: '/motoristas',
-      icon: FiUser,
-      label: 'Motoristas',
-      description: 'Gerenciamento de motoristas',
-      color: 'var(--orange-soft)'
+      path: '/employee-auth',
+      icon: FiMap,
+      label: 'Funcionários',
+      description: 'Painel de Login e Criação de Conta',
+      color: COLORS.blue.vibrant,
+      animation: 'subtle'
     },
-    {
-      path: '/veiculos',
-      icon: HiOutlineTruck,
-      label: 'Veículos',
-      description: 'Gerenciamento de veículos',
-      color: 'var(--blue-vibrant)'
-    },
-    {
-      path: '/relatorios',
-      icon: FiLayers,
-      label: 'Relatórios',
-      description: 'Relatórios detalhados e analytics',
-      color: 'var(--blue-primary)'
-    },
-    {
-      path: '/manutencao',
-      icon: FiSettings,
-      label: 'Manutenção',
-      description: 'Controle de manutenção preventiva',
-      color: 'var(--orange-primary)'
-    },
-    {
-      path: '/financeiro',
-      icon: FiCreditCard,
-      label: 'Financeiro',
-      description: 'Gestão financeira e pagamentos',
-      color: 'var(--green-primary)'
-    }
-  ];
 
+  ];
   const userMenuItems = [
-      {
+    {
       path: '/profile',
       icon: FiUser,
-      label: 'Meu Perfil',
-      description: 'Gerencie suas informações pessoais',
-      color: 'var(--blue-vibrant)',
-      badge: 'NOVO'
+      label: 'Perfil',
+      description: 'Gerencie suas informações',
+      color: COLORS?.blue?.vibrant || 'var(--blue-vibrant)',
+      badge: 'Novo'
     },
     {
-      path: '/historico',
       icon: FiClock,
       label: 'Histórico',
-      description: 'Veja seu histórico completo',
-      color: 'var(--blue-primary)'
+      path: '/history',
+      color: COLORS?.blue?.primary || 'var(--blue-primary)',
+      description: 'Veja seu histórico'
     },
     {
-      path: '/planos',
       icon: FiCreditCard,
       label: 'Assinatura',
-      description: 'Gerencie sua assinatura Premium',
-      color: 'var(--orange-primary)'
+      path: '/subscription',
+      color: COLORS?.orange?.primary || 'var(--orange-primary)',
+      description: 'Gerencie sua assinatura',
+      badge: 'Premium'
     },
     {
-      path: '/configuracoes',
       icon: FiSettings,
       label: 'Configurações',
-      description: 'Configurações da conta',
-      color: 'var(--blue-dark)'
+      path: '/settings',
+      color: COLORS?.blue?.dark || 'var(--blue-dark)',
+      description: 'Configurações da conta'
     },
     {
-      path: '/privacidade',
       icon: FiShield,
       label: 'Privacidade',
-      description: 'Configurações de privacidade e segurança',
-      color: 'var(--blue-vibrant)'
+      path: '/privacy',
+      color: COLORS?.blue?.vibrant || 'var(--blue-vibrant)',
+      description: 'Configurações de privacidade'
     },
     {
-      path: '/support',
       icon: FiHelpCircle,
       label: 'Ajuda & Suporte',
-      description: 'Central de ajuda e suporte 24/7',
-      color: 'var(--orange-soft)'
-    },
-    {
-      path: '/notificacoes',
-      icon: FiBell,
-      label: 'Notificações',
-      description: 'Configurar alertas e notificações',
-      color: 'var(--blue-primary)'
-    },
-    {
-      path: '/mensagens',
-      icon: FiMessageSquare,
-      label: 'Mensagens',
-      description: 'Caixa de entrada e mensagens',
-      color: 'var(--orange-soft)'
+      path: '/support',
+      color: COLORS?.orange?.soft || 'var(--orange-soft)',
+      description: 'Central de ajuda'
     }
   ];
 
-  const userStats = [
-    
-  ];
+  const userStats = [];
 
   const sidebarVariants = {
     open: {
@@ -763,8 +735,8 @@ const PremiumSidebar = ({ onLogout }) => {
           >
             <div className="logo-container">
               <img 
-                src={Logotipofretevelocidadelaranja} 
-                alt="Transita AI Pro" 
+                src={logoBanner} 
+                alt="Ecos Da Realidade" 
                 className="logo-image-optimized"
               />
               <motion.div 
@@ -777,7 +749,7 @@ const PremiumSidebar = ({ onLogout }) => {
               />
             </div>
             <div className="logo-text">
-              <span className="logo-primary">Transita AI</span>
+              <span className="logo-primary">Transita.IA</span>
             </div>
           </motion.div>
 
@@ -920,15 +892,27 @@ const PremiumSidebar = ({ onLogout }) => {
                 />
               </motion.button>
             ) : (
-              <motion.button
-                className="login-btn-header"
-                onClick={() => navigate('/login')}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <FiLogIn />
-                <span>Login</span>
-              </motion.button>
+              <>
+                <motion.button
+                  className="signup-btn-header"
+                  onClick={() => navigate('/login?mode=signup')}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <FiUser />
+                  <span>Criar Conta</span>
+                </motion.button>
+
+                <motion.button
+                  className="login-btn-header"
+                  onClick={() => navigate('/login')}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <FiLogIn />
+                  <span>Login</span>
+                </motion.button>
+              </>
             )}
           </div>
         </div>
@@ -969,14 +953,14 @@ const PremiumSidebar = ({ onLogout }) => {
                 >
                   <div className="brand-logo-container">
                     <img 
-                      src={Logotipofretevelocidadelaranja} 
-                      alt="Transita AI Pro" 
+                      src={logoBanner} 
+                      alt="Ecos da Realidade" 
                       className="brand-logo-image"
                     />
                   </div>
                 </motion.div>
                 <div className="brand-text">
-                  <h3>Transita AI</h3>
+                  <h3>Emannuel Dev</h3>
                   <motion.span 
                     className="brand-subtitle"
                     animate={{ 
@@ -984,7 +968,7 @@ const PremiumSidebar = ({ onLogout }) => {
                     }}
                     transition={{ duration: 6, repeat: Infinity }}
                   >
-                    Professional Edition
+                    Soluções Full Stack
                   </motion.span>
                 </div>
               </div>
@@ -1028,18 +1012,6 @@ const PremiumSidebar = ({ onLogout }) => {
               </nav>
 
               <div className="sidebar-info-card">
-                <motion.div 
-                  className="info-card-content"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <FiZap className="info-icon" />
-                  <div>
-                    <span className="info-title">Sistema Otimizado</span>
-                    <span className="info-description">Performance máxima garantida</span>
-                  </div>
-                </motion.div>
               </div>
             </div>
 
@@ -1068,7 +1040,7 @@ const PremiumSidebar = ({ onLogout }) => {
                     <div className="user-info-preview">
                       <span className="user-name">{user.displayName || user.email}</span>
                       <span className="user-plan">
-                        <FiZap size={12} /> Plano Premium
+                        <FiZap size={12} /> 
                       </span>
                     </div>
                   </div>

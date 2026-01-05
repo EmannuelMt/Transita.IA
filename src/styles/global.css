@@ -7,6 +7,83 @@
   padding: 0;
 }
 
+/* CSS Custom Properties (Variables) */
+:root {
+  /* Colors */
+  --color-blue-neon: 200 100% 50%;
+  --color-orange-fire: 25 100% 50%;
+  --color-purple: 270 100% 70%;
+  --color-green: 120 100% 50%;
+  --color-cyan: 180 100% 50%;
+  --color-pink: 320 100% 70%;
+  --color-gold: 45 100% 50%;
+  --color-teal: 170 100% 50%;
+  --color-indigo: 240 100% 70%;
+  --color-black-400: 0 0% 20%;
+  --color-black-900: 0 0% 5%;
+  --color-black-950: 0 0% 2%;
+  --color-error: 0 100% 50%;
+  --color-warning: 45 100% 50%;
+  --color-success: 120 100% 50%;
+
+  /* Gradients */
+  --gradient-blue-neon: linear-gradient(135deg, hsl(200 100% 50%), hsl(220 100% 70%));
+  --gradient-orange-neon: linear-gradient(135deg, hsl(25 100% 50%), hsl(45 100% 60%));
+  --gradient-purple-neon: linear-gradient(135deg, hsl(270 100% 70%), hsl(290 100% 80%));
+  --gradient-green-neon: linear-gradient(135deg, hsl(120 100% 50%), hsl(140 100% 60%));
+  --gradient-cyan-neon: linear-gradient(135deg, hsl(180 100% 50%), hsl(200 100% 60%));
+  --gradient-pink-neon: linear-gradient(135deg, hsl(320 100% 70%), hsl(340 100% 80%));
+  --gradient-gold-neon: linear-gradient(135deg, hsl(45 100% 50%), hsl(65 100% 60%));
+  --gradient-teal-neon: linear-gradient(135deg, hsl(170 100% 50%), hsl(190 100% 60%));
+  --gradient-indigo-neon: linear-gradient(135deg, hsl(240 100% 70%), hsl(260 100% 80%));
+
+  /* Shadows */
+  --shadow-blue: 0 4px 20px hsl(200 100% 50% / 0.3);
+  --shadow-orange: 0 4px 20px hsl(25 100% 50% / 0.3);
+  --shadow-purple: 0 4px 20px hsl(270 100% 70% / 0.3);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Typography */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
+
 /* Layout principal: usar apenas um container rolável (main.main-content)
    Isso evita barras de rolagem duplicadas no body e em contêineres pai.
 */

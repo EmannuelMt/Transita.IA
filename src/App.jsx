@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { onAuthChange } from './firebase/auth';
 import Navbar from './components/Navbar/Navbar';
 import Home from './pages/Home/Home';
@@ -11,14 +11,14 @@ import Search from './pages/Search/Search';
 import { api } from './services/api';
 import GlobalLoading from './components/GlobalLoading/GlobalLoading';
 import Dashboard from './pages/dashboard/Dashboard';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
+import Login from './components/auth/Login';
 import CompanyProfile from './pages/profiles/CompanyProfile';
 import EmployeeProfile from './pages/profiles/EmployeeProfile';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Support from './pages/Support/Support';
 import Planos from './pages/Planos/Planos';
-// import { AuthProvider, useAuth } from './contexts/AuthContext'; // DESATIVADO
+import EmployeeAuth from './components/Auth/EmployeeAuth';
+import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
   const [user, setUser] = useState({ name: 'Usuário Teste', email: 'teste@email.com', role: 'COMPANY' }); // USUÁRIO FAKE
@@ -26,6 +26,7 @@ function AppContent() {
   const [globalLoading, setGlobalLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   // const { isAuthenticated, logout } = useAuth(); // DESATIVADO
   const isAuthenticated = true; // SEMPRE AUTENTICADO
   const logout = () => console.log('Logout desativado'); // LOG APENAS
@@ -79,13 +80,14 @@ function AppContent() {
               {/* Rotas Públicas */}
               <Route
                 path="/login"
-                element={<Login />}
+                element={<Login initialMode={searchParams.get('mode') || 'login'} />}
               />
 
               <Route
-                path="/register"
-                element={<Register />}
+                path="/employee-auth"
+                element={<EmployeeAuth />}
               />
+
               <Route
                 path="/support"
                 element={<Support />}
@@ -140,9 +142,11 @@ function AppContent() {
 
 function App() {
   return (
-    <NotificationProvider>
-      <AppContent />
-    </NotificationProvider>
+    <AuthProvider>
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 
