@@ -11,13 +11,13 @@ import GlobalLoading from './components/GlobalLoading/GlobalLoading.jsx';
 import Dashboard from './pages/dashboard/Dashboard.jsx';
 import CompanyProfile from './pages/profiles/CompanyProfile.jsx';
 import EmployeeProfile from './pages/profiles/EmployeeProfile.jsx';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import Support from './pages/Support/Support.jsx';
 import Planos from './pages/Planos/Planos.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import EmployeeAuth from './components/auth/EmployeeAuth.jsx';
 import Login from './components/auth/Login.jsx';
-
+import { AuthProvider } from './contexts/AuthContext.jsx';
 
 function AppContent() {
   const [user, setUser] = useState({ name: 'Usuário Teste', email: 'teste@email.com', role: 'COMPANY' }); // USUÁRIO FAKE
