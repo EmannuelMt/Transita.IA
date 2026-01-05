@@ -1,0 +1,45 @@
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.premium-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.premium-badge-text {
+  color: white;
+  font-weight: 800;
+}
+
+/* Color variants */
+.premium-badge-orange {
+  background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+}
+
+.premium-badge-purple {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.premium-badge-blue {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.premium-badge-green {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
