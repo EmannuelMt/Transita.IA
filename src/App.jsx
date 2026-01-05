@@ -14,9 +14,10 @@ import EmployeeProfile from './pages/profiles/EmployeeProfile.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import Support from './pages/Support/Support.jsx';
 import Planos from './pages/Planos/Planos.jsx';
-import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
-import EmployeeAuth from './components/auth/EmployeeAuth.jsx';
-import Login from './components/auth/Login.jsx';
+import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
+import EmployeeAuth from './components/Auth/EmployeeAuth.jsx';
+import Login from './components/Auth/Login.jsx';
+
 import { AuthProvider } from './contexts/AuthContext.jsx';
 
 function AppContent() {
