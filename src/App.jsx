@@ -11,19 +11,23 @@ import GlobalLoading from './components/GlobalLoading/GlobalLoading.jsx';
 import Dashboard from './pages/dashboard/Dashboard.jsx';
 import CompanyProfile from './pages/profiles/CompanyProfile.jsx';
 import EmployeeProfile from './pages/profiles/EmployeeProfile.jsx';
+import UserProfile from './pages/profiles/UserProfile.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import Support from './pages/Support/Support.jsx';
 import Planos from './pages/Planos/Planos.jsx';
+import Settings from './pages/Settings/Settings.jsx';
+import Multas from './pages/Multas/Multas.jsx';
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import EmployeeAuth from './components/Auth/EmployeeAuth.jsx';
 import Login from './components/Auth/Login.jsx';
-
+import Privacy from './pages/Privacy/Privacy.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
-
+import DevelopmentPopup from './components/DevelopmentPopup/DevelopmentPopup.jsx';
 function AppContent() {
   const [user, setUser] = useState({ name: 'Usuário Teste', email: 'teste@email.com', role: 'COMPANY' }); // USUÁRIO FAKE
   const [loading, setLoading] = useState(false); // SEM LOADING
   const [globalLoading, setGlobalLoading] = useState(true);
+  const [showDevPopup, setShowDevPopup] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -41,22 +45,24 @@ function AppContent() {
   // }, []); // DESATIVADO
 
   useEffect(() => {
-    const t = setTimeout(() => setGlobalLoading(false), 1500);
-    return () => clearTimeout(t);
+    // Mostrar popup de desenvolvimento se não foi mostrado ainda
+    const hasSeenDevPopup = localStorage.getItem('hasSeenDevPopup');
+    if (!hasSeenDevPopup) {
+      setShowDevPopup(true);
+    }
   }, []);
 
-  useEffect(() => {
-    // skip initial load
-    if (!globalLoading) {
-      setGlobalLoading(true);
-      const t = setTimeout(() => setGlobalLoading(false), 800);
-      return () => clearTimeout(t);
-    }
-
-  }, [location.pathname]);
+  const handleGlobalLoadingComplete = () => {
+    setGlobalLoading(false);
+  };
 
   const handleLogin = (user) => {
     setUser(user);
+  };
+
+  const handleDevPopupClose = () => {
+    setShowDevPopup(false);
+    localStorage.setItem('hasSeenDevPopup', 'true');
   };
 
   const handleLogout = () => {
@@ -67,7 +73,8 @@ function AppContent() {
   return (
     <NotificationProvider>
       <div className="app">
-        {globalLoading && <GlobalLoading isVisible />}
+        {globalLoading && <GlobalLoading onComplete={handleGlobalLoadingComplete} />}
+        <DevelopmentPopup isVisible={showDevPopup} onClose={handleDevPopupClose} />
         {true && (
           <Navbar
             onLogout={handleLogout}
@@ -110,6 +117,16 @@ function AppContent() {
               />
 
               <Route
+                path="/multas"
+                element={<Multas />}
+              />
+
+              <Route
+                path="/profile"
+                element={<UserProfile />}
+              />
+
+              <Route
                 path="/profile/company"
                 element={<CompanyProfile />}
               />
@@ -119,11 +136,24 @@ function AppContent() {
                 element={<EmployeeProfile />}
               />
 
-              {/* Rota 404 - Página não encontrada */}
               <Route
                 path="/search"
                 element={<Search />}
               />
+              <Route
+                path="/privacy"
+                element={<Privacy />}
+              />
+              
+              <Route  
+                path="/settings"
+                element={<Settings />}
+                  
+                
+              />
+
+              
+              {/* Rota 404 - Página não encontrada */}
               <Route
                 path="*"
                 element={

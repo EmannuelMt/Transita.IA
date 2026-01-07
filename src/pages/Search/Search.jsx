@@ -3,7 +3,6 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { searchIndex } from '../../services/searchIndex';
 import './Search.css';
 
-// Hook personalizado para buscar parâmetros da URL
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -13,13 +12,9 @@ const Search = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Pega o parâmetro 'q' da URL e sanitiza
   const q = (query.get('q') || '').trim().toLowerCase();
-  
-  // Verifica se o parâmetro 'q' existe na URL
   const hasQueryParam = query.has('q');
   
-  // Redireciona para NotFound se tentarem acessar /search sem parâmetro 'q'
   useEffect(() => {
     if (!hasQueryParam) {
       navigate('/not-found', { replace: true });
@@ -27,19 +22,16 @@ const Search = () => {
     }
   }, [hasQueryParam, navigate]);
   
-  // Se não há parâmetro 'q', não renderiza nada (será redirecionado pelo useEffect)
   if (!hasQueryParam) {
     return null;
   }
 
-  // Filtra os resultados da busca
   const results = q
     ? searchIndex.filter(item => {
         if (!item || !item.title || !item.keywords || !item.excerpt) {
           return false;
         }
         
-        // Cria uma string concatenada para busca
         const searchableText = (
           item.title + ' ' + 
           (Array.isArray(item.keywords) ? item.keywords.join(' ') : '') + ' ' + 
@@ -52,73 +44,115 @@ const Search = () => {
 
   return (
     <div className="search-page">
-      <div className="container">
+      <div className="search-container">
         <div className="search-header">
-          <h2>
-            Resultados para: 
-            <span className="search-query">
-              {q || '—'}
-            </span>
-          </h2>
-          <p className="search-sub">
-            {results.length} resultado{results.length !== 1 ? 's' : ''} encontrado{results.length !== 1 ? 's' : ''}
-          </p>
+          <div className="search-header-content">
+            <h1 className="search-title">
+              Resultados da busca
+            </h1>
+            <div className="search-query-wrapper">
+              <span className="search-query-label">Busca por:</span>
+              <span className="search-query-value">{q || '—'}</span>
+            </div>
+            <div className="search-results-count">
+              {results.length} resultado{results.length !== 1 ? 's' : ''} encontrado{results.length !== 1 ? 's' : ''}
+            </div>
+          </div>
         </div>
 
-        <div className="search-results">
-          {/* Mensagem para busca vazia */}
-          {!q && (
+        <div className="search-content">
+          {!q ? (
             <div className="search-empty-state">
-              <p className="search-empty">
+              <div className="search-empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <h3 className="search-empty-title">Busca vazia</h3>
+              <p className="search-empty-description">
                 Digite algo na barra de pesquisa para buscar no site.
               </p>
-              <Link to="/" className="search-home-link">
+              <Link to="/" className="search-home-button">
                 Voltar para Home
               </Link>
             </div>
-          )}
-
-          {/* Lista de resultados */}
-          {results.map((r) => (
-            <div key={r.path} className="search-card">
-              <h3>
-                <Link to={r.path} className="search-card-title">
-                  {r.title}
-                </Link>
-              </h3>
-              <p className="search-excerpt">
-                {r.excerpt}
-              </p>
-              <div className="search-keywords">
-                {Array.isArray(r.keywords) && r.keywords.map((keyword, index) => (
-                  <span key={index} className="search-keyword-tag">
-                    {keyword}
-                  </span>
-                ))}
-              </div>
-              <Link to={r.path} className="search-link">
-                Ver mais &rarr;
-              </Link>
-            </div>
-          ))}
-
-          {/* Mensagem para nenhum resultado encontrado */}
-          {q && results.length === 0 && (
+          ) : results.length === 0 ? (
             <div className="search-no-results">
-              <p className="search-empty">
-                Nenhum resultado encontrado para "{q}".
-              </p>
-              <p className="search-suggestions">
-                Sugestões:
-              </p>
-              <ul className="search-suggestions-list">
-                <li>Verifique a ortografia</li>
-                <li>Tente termos mais gerais</li>
-                <li>Use palavras-chave diferentes</li>
-              </ul>
-              <Link to="/" className="search-home-link">
+              <div className="search-no-results-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <h3 className="search-no-results-title">
+                Nenhum resultado encontrado para "{q}"
+              </h3>
+              <div className="search-suggestions">
+                <p className="search-suggestions-title">Sugestões:</p>
+                <ul className="search-suggestions-list">
+                  <li className="search-suggestion-item">
+                    <span className="suggestion-bullet">•</span>
+                    Verifique a ortografia das palavras
+                  </li>
+                  <li className="search-suggestion-item">
+                    <span className="suggestion-bullet">•</span>
+                    Tente termos mais gerais ou sinônimos
+                  </li>
+                  <li className="search-suggestion-item">
+                    <span className="suggestion-bullet">•</span>
+                    Use menos palavras-chave
+                  </li>
+                  <li className="search-suggestion-item">
+                    <span className="suggestion-bullet">•</span>
+                    Certifique-se de que todos os filtros estão corretos
+                  </li>
+                </ul>
+              </div>
+              <Link to="/" className="search-home-button">
                 Voltar para Home
               </Link>
+            </div>
+          ) : (
+            <div className="search-results-grid">
+              {results.map((result, index) => (
+                <article key={result.path || index} className="search-result-card">
+                  <div className="search-result-header">
+                    <h2 className="search-result-title">
+                      <Link to={result.path} className="search-result-link">
+                        {result.title}
+                      </Link>
+                    </h2>
+                    <div className="search-result-badge">
+                      Resultado {index + 1}
+                    </div>
+                  </div>
+                  
+                  <p className="search-result-excerpt">
+                    {result.excerpt}
+                  </p>
+                  
+                  {Array.isArray(result.keywords) && result.keywords.length > 0 && (
+                    <div className="search-result-keywords">
+                      {result.keywords.map((keyword, idx) => (
+                        <span key={idx} className="search-keyword-tag">
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="search-result-footer">
+                    <Link to={result.path} className="search-result-action">
+                      <span>Ver detalhes</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                    </Link>
+                  </div>
+                </article>
+              ))}
             </div>
           )}
         </div>

@@ -1,347 +1,143 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './GlobalLoading.css';
 
-const LoadingScreen = ({ onComplete, loadingTime = 4000 }) => {
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState('Inicializando sistema…');
-  const [isComplete, setIsComplete] = useState(false);
-  const progressRef = useRef(0);
-  const startTimeRef = useRef(null);
-  const animationFrameRef = useRef(null);
-
-  const statuses = [
-    { text: 'Inicializando sistema…', emoji: '🔍' },
-    { text: 'Iniciando núcleo Nexus...', emoji: '⚙️' },
-    { text: 'Verificando integridade dos setores...', emoji: '✅' },
-    { text: 'Estabelecendo conexão neural...', emoji: '🧠' },
-    { text: 'Carregando módulos de IA...', emoji: '🤖' },
-    { text: 'Otimizando desempenho...', emoji: '⚡' },
-    { text: 'Sistema pronto.', emoji: '🚀' }
+const LoadingScreen = ({ onComplete }) => {
+  const [statusIndex, setStatusIndex] = useState(0);
+  const statusMessages = [
+    "Iniciando Transita.IA...",
+    "Sincronizando dados da frota...",
+    "Otimizando rotas inteligentes...",
+    "Carregando painel de analytics...",
+    "Quase pronto..."
   ];
 
-  const simulateLoading = useCallback((timestamp) => {
-    if (!startTimeRef.current) startTimeRef.current = timestamp;
-    
-    const elapsed = timestamp - startTimeRef.current;
-    const targetProgress = Math.min((elapsed / loadingTime) * 100, 100);
-    
-    // Suavização do progresso com easing
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-    const easedProgress = easeOutCubic(targetProgress / 100) * 100;
-    
-    const newProgress = Math.min(easedProgress, 100);
-    
-    setProgress(newProgress);
-    progressRef.current = newProgress;
-
-    // Atualizar status baseado no progresso
-    const statusIndex = Math.floor((newProgress / 100) * (statuses.length - 1));
-    if (statuses[statusIndex]?.text !== status) {
-      setStatus(statuses[statusIndex]?.text || 'Carregando...');
-    }
-
-    if (newProgress < 100) {
-      animationFrameRef.current = requestAnimationFrame(simulateLoading);
-    } else {
-      // Pequeno delay antes de completar
-      setTimeout(() => {
-        setIsComplete(true);
-        setTimeout(onComplete, 800);
-      }, 300);
-    }
-  }, [loadingTime, onComplete, status, statuses]);
-
   useEffect(() => {
-    animationFrameRef.current = requestAnimationFrame(simulateLoading);
-    
+    const interval = setInterval(() => {
+      setStatusIndex((prev) => (prev + 1) % statusMessages.length);
+    }, 800);
+
+    // Completar loading após 4 segundos
+    const completeTimer = setTimeout(() => {
+      onComplete && onComplete();
+    }, 4000);
+
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      clearInterval(interval);
+      clearTimeout(completeTimer);
     };
-  }, [simulateLoading]);
-
-  const getStatusEmoji = () => {
-    const statusIndex = statuses.findIndex(s => s.text === status);
-    return statuses[statusIndex]?.emoji || '⚙️';
-  };
-
-  const formatTimeRemaining = () => {
-    const remaining = ((100 - progress) / 100) * (loadingTime / 1000);
-    return remaining > 1 ? `${remaining.toFixed(1)}s` : 'Quase pronto...';
-  };
-
-  const getProgressColor = () => {
-    if (progress < 30) return 'from-blue-600 to-cyan-500';
-    if (progress < 70) return 'from-cyan-500 to-purple-500';
-    return 'from-purple-500 to-green-500';
-  };
+  }, [onComplete]);
 
   return (
-    <AnimatePresence mode="wait">
-      {!isComplete && (
-        <motion.div
-          className="loading-screen"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ 
-            opacity: 0,
-            scale: 1.1,
-            transition: { duration: 0.8, ease: "easeInOut" }
+    <motion.div
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+      className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden"
+    >
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0]
           }}
+          transition={{ duration: 20, repeat: Infinity }}
+          className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-green-50 rounded-full blur-[120px] opacity-60"
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0]
+          }}
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-blue-50 rounded-full blur-[100px] opacity-40"
+        />
+      </div>
+
+      <div className="relative flex flex-col items-center">
+        {/* Logo Animation */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative mb-12"
         >
-          {/* Background com múltiplas camadas */}
-          <div className="background-layers">
-            <motion.div
-              className="pulse-layer pulse-layer-1"
-              animate={{ 
-                scale: [1, 1.4, 1],
-                opacity: [0.1, 0.3, 0.1],
-                rotate: [0, 180, 360]
-              }}
-              transition={{ 
-                duration: 8, 
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-            <motion.div
-              className="pulse-layer pulse-layer-2"
-              animate={{ 
-                scale: [1.2, 1.6, 1.2],
-                opacity: [0.05, 0.2, 0.05],
-                rotate: [180, 360, 540]
-              }}
-              transition={{ 
-                duration: 12, 
-                repeat: Infinity,
-                ease: "linear",
-                delay: 0.5
-              }}
-            />
-            <motion.div
-              className="pulse-layer pulse-layer-3"
-              animate={{ 
-                scale: [0.8, 1.3, 0.8],
-                opacity: [0.08, 0.15, 0.08]
-              }}
-              transition={{ 
-                duration: 6, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-          </div>
-
-          {/* Conteúdo principal */}
-          <div className="loading-content">
-            {/* Logo/Ícone animado */}
-            <motion.div
-              className="loading-icon"
-              animate={{ 
-                rotate: 360,
-                scale: [1, 1.1, 1],
-              }}
-              transition={{ 
-                rotate: { 
-                  duration: 4, 
-                  repeat: Infinity, 
-                  ease: "linear" 
-                },
-                scale: {
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }
-              }}
-            >
-              <div className="icon-wrapper">
-                <motion.div 
-                  className="icon-outer"
-                  animate={{ rotate: -360 }}
-                  transition={{ 
-                    duration: 6, 
-                    repeat: Infinity, 
-                    ease: "linear" 
-                  }}
-                >
-                  {getStatusEmoji()}
-                </motion.div>
-                <motion.div 
-                  className="icon-inner"
-                  animate={{ 
-                    rotate: 360,
-                    scale: [0.9, 1.1, 0.9]
-                  }}
-                  transition={{ 
-                    duration: 3, 
-                    repeat: Infinity, 
-                    ease: "easeInOut" 
-                  }}
-                >
-                  <span className="status-emoji">⚡</span>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Status e informações */}
-            <div className="status-container">
-              <motion.div
-                key={status}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="status-text-container"
-              >
-                <span className="status-emoji-current">{getStatusEmoji()}</span>
-                <h2 className="status-text">{status}</h2>
-              </motion.div>
-
-              {/* Barra de progresso */}
-              <div className="progress-section">
-                <div className="progress-header">
-                  <div className="progress-info">
-                    <span className="progress-label">Progresso do sistema</span>
-                    <span className="progress-time">{formatTimeRemaining()}</span>
-                  </div>
-                  <div className="progress-percentage">
-                    {Math.round(progress)}%
-                  </div>
-                </div>
-
-                <div className="progress-bar-container">
-                  <div className="progress-bar-background">
-                    <motion.div
-                      className={`progress-bar-fill ${getProgressColor()}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 100,
-                        damping: 20
-                      }}
-                    />
-                    <motion.div 
-                      className="progress-bar-glow"
-                      animate={{ 
-                        left: [`${progress}%`, `${progress + 10}%`, `${progress}%`]
-                      }}
-                      transition={{ 
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Marcadores de progresso */}
-                  <div className="progress-markers">
-                    {statuses.map((_, index) => (
-                      <div 
-                        key={index}
-                        className={`progress-marker ${
-                          progress >= (index / (statuses.length - 1)) * 100 
-                            ? 'active' 
-                            : ''
-                        }`}
-                        style={{ left: `${(index / (statuses.length - 1)) * 100}%` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Detalhes do sistema */}
-              <div className="system-details">
-                <div className="system-info">
-                  <div className="system-item">
-                    <span className="system-label">Transita.IA</span>
-                    
-                  </div>
-                  <div className="system-item">
-                    <span className="system-label">Build</span>
-                    <span className="system-value">#NX-2024-01</span>
-                  </div>
-                  <div className="system-item">
-                    <span className="system-label">Status</span>
-                    <motion.span 
-                      className="system-value status-indicator"
-                      animate={{ 
-                        color: progress < 100 ? '#FF6A00' : '#10B981'
-                      }}
-                    >
-                      {progress < 100 ? 'INICIALIZANDO' : 'PRONTO'}
-                    </motion.span>
-                  </div>
-                </div>
-
-                {/* Indicadores de atividade */}
-                <div className="activity-indicators">
-                  <motion.div 
-                    className="activity-dot"
-                    animate={{ 
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 1, 0.5]
-                    }}
-                    transition={{ 
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0
-                    }}
-                  />
-                  <motion.div 
-                    className="activity-dot"
-                    animate={{ 
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 1, 0.5]
-                    }}
-                    transition={{ 
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0.2
-                    }}
-                  />
-                  <motion.div 
-                    className="activity-dot"
-                    animate={{ 
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 1, 0.5]
-                    }}
-                    transition={{ 
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: 0.4
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Rodapé */}
-          <motion.div 
-            className="loading-footer"
+          <motion.div
             animate={{ 
-              opacity: [0.5, 1, 0.5]
+              boxShadow: [
+                "0 0 0px rgba(22, 163, 74, 0)",
+                "0 0 40px rgba(22, 163, 74, 0.3)",
+                "0 0 0px rgba(22, 163, 74, 0)"
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-24 h-24 bg-green-600 rounded-[2rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl"
+          >
+            T
+          </motion.div>
+          
+          {/* Pulsing ring */}
+          <motion.div 
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute inset-0 bg-green-600 rounded-[2rem] -z-10"
+          />
+        </motion.div>
+
+        {/* Brand Name */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Transita.IA</h1>
+          <p className="text-[10px] text-green-600 font-bold uppercase tracking-[0.3em] mt-1">Inteligência em Movimento</p>
+        </motion.div>
+
+        {/* Progress Bar Container */}
+        <div className="w-48 h-1 bg-gray-100 rounded-full overflow-hidden relative mb-4">
+          <motion.div
+            animate={{ 
+              x: ["-100%", "100%"]
             }}
             transition={{ 
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
+              duration: 1.5, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
             }}
-          >
-            <span className="footer-text">
-              ⚡ Sistema de carregamento otimizado • Segurança máxima ativada
-            </span>
-            <span className="footer-version">
-              © 2025 Transita.IA 
-            </span>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-green-600 to-transparent"
+          />
+        </div>
+
+        {/* Status Messages */}
+        <div className="h-6 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={statusIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-xs font-medium text-gray-400"
+            >
+              {statusMessages[statusIndex]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Footer Info */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="absolute bottom-12 text-center"
+      >
+        <p className="text-[9px] text-gray-300 font-semibold uppercase tracking-widest">Powered by Gemini Pro Vision</p>
+      </motion.div>
+    </motion.div>
   );
 };
 

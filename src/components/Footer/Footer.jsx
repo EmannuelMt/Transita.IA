@@ -1,801 +1,529 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Logotipofretevelocidadelaranja from '../../assets/images/Logo/Logotipofretevelocidadelaranja.png';
-import {
-  FiTruck, FiLinkedin, FiTwitter, FiInstagram, FiMapPin, FiTrendingUp,
-  FiHeadphones, FiPhone, FiMail, FiShield, FiInfo, FiPackage, FiClock,
-  FiDollarSign, FiGlobe, FiDatabase, FiBox, FiNavigation, FiCpu,
-  FiSettings, FiBarChart2, FiUser, FiMessageCircle, FiAward, FiStar, FiZap,
-  FiChevronRight, FiCheck, FiArrowRight, FiBell, FiCalendar, FiDownload,
-  FiFileText, FiPlay, FiExternalLink, FiActivity, FiTarget, FiSmartphone
+import { 
+  FiTruck, FiLinkedin, FiTwitter, FiInstagram, FiMessageCircle,
+  FiMail, FiShield, FiChevronRight, FiArrowRight, FiMapPin,
+  FiHeadphones, FiCalendar, FiPlay, FiCheck, FiGlobe, FiTrendingUp,
+  FiPackage, FiClock, FiSmartphone, FiChevronUp, FiZap,
+  FiStar, FiAward, FiDownload, FiFileText, FiExternalLink
 } from 'react-icons/fi';
+import logoBanner from '../../assets/images/Logo/Logo.png';
 import './Footer.css';
 
-// ============================================================================
-// COMPONENTES AUXILIARES
-// ============================================================================
-
-const AnimatedIcon = ({ icon: Icon, color, size = 24, animation = "float" }) => {
-  const animations = {
-    float: {
-      animate: { y: [0, -10, 0] },
-      transition: { duration: 2, repeat: Infinity }
-    },
-    rotate: {
-      animate: { rotate: 360 },
-      transition: { duration: 20, repeat: Infinity, ease: "linear" }
-    },
-    pulse: {
-      animate: { scale: [1, 1.1, 1] },
-      transition: { duration: 2, repeat: Infinity }
-    }
-  };
-
-  return (
-    <motion.div
-      className="animated-icon"
-      {...animations[animation]}
-      style={{ color }}
-    >
-      <Icon size={size} />
-    </motion.div>
-  );
-};
-
-// ============================================================================
-// COMPONENTE DE LOGO
-// ============================================================================
-
-const LogoSection = () => {
-  return (
-    <motion.section 
-      className="footer-logo-section"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.8 }}
-    >
-      <div className="footer-logo-container">
-        <motion.div 
-          className="footer-logo-wrapper"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 400 }}
-        >
-          <div className="footer-logo-circle">
-            <motion.div 
-              className="footer-logo-orb"
-              animate={{
-                rotate: 360,
-                scale: [1, 1.1, 1]
-              }}
-              transition={{
-                rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                scale: { duration: 3, repeat: Infinity }
-              }}
-            />
-          </div>
-          
-          <div className="footer-logo-image-container">
-            <img 
-              src={Logotipofretevelocidadelaranja} 
-              alt="Transita.AI" 
-              className="footer-logo-image"
-              loading="lazy"
-            />
-          </div>
-          
-          <div className="footer-logo-glow" />
-        </motion.div>
-        
-        <div className="footer-logo-content">
-          <motion.h2 
-            className="footer-logo-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            Transita<span className="footer-logo-highlight">.AI</span>
-          </motion.h2>
-          
-          <motion.p 
-            className="footer-logo-subtitle"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Inteligência Avançada em Logística
-          </motion.p>
-          
-          <div className="footer-logo-tags">
-            {[
-              { icon: FiCpu, text: "AI Powered", color: "#f97316" },
-              { icon: FiZap, text: "Real-Time", color: "#3b82f6" },
-              { icon: FiShield, text: "Enterprise", color: "#10b981" }
-            ].map((tag, idx) => (
-              <motion.span
-                key={idx}
-                className="footer-logo-tag"
-                style={{ '--tag-color': tag.color }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.1, y: -2 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
-              >
-                <tag.icon className="footer-tag-icon" />
-                <span>{tag.text}</span>
-              </motion.span>
-            ))}
-          </div>
-        </div>
+// Componentes memoizados
+const FooterLink = memo(({ link, index }) => (
+  <motion.li
+    initial={{ opacity: 0, x: -10 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    transition={{ delay: index * 0.03, duration: 0.3 }}
+    viewport={{ once: true, margin: "-50px" }}
+  >
+    <a href={link.href} className="footer-link">
+      <span className="footer-link-bullet" />
+      <div className="footer-link-content">
+        <span className="footer-link-text">{link.name}</span>
+        {link.desc && (
+          <span className="footer-link-desc">{link.desc}</span>
+        )}
       </div>
-      
-      <motion.div 
-        className="footer-logo-description"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <p>Revolucionando a logística com tecnologia de ponta e inteligência artificial</p>
-        <motion.a 
-          href="/sobre" 
-          className="footer-logo-link"
-          whileHover={{ x: 5 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span>Conheça nossa história</span>
-          <FiChevronRight className="footer-link-arrow" />
-        </motion.a>
-      </motion.div>
-    </motion.section>
-  );
-};
+      <FiChevronRight className="footer-link-arrow" />
+    </a>
+  </motion.li>
+));
 
-// ============================================================================
-// COMPONENTE DE ESTATÍSTICAS
-// ============================================================================
-
-const StatsSection = () => {
-  const stats = useMemo(() => [
-    {
-      value: "2.847",
-      label: "Veículos Ativos",
-      icon: FiTruck,
-      color: "#f97316",
-      change: "+12%",
-      desc: "Crescimento mensal"
-    },
-    {
-      value: "98.3%",
-      label: "Eficiência",
-      icon: FiTrendingUp,
-      color: "#10b981",
-      change: "+5.2%",
-      desc: "Otimização com IA"
-    },
-    {
-      value: "R$ 42K",
-      label: "Economia",
-      icon: FiDollarSign,
-      color: "#3b82f6",
-      change: "-23%",
-      desc: "Redução de custos"
-    },
-    {
-      value: "24/7",
-      label: "Suporte",
-      icon: FiHeadphones,
-      color: "#8b5cf6",
-      change: "98%",
-      desc: "Satisfação"
-    }
-  ], []);
-
-  return (
-    <motion.section 
-      className="footer-stats-section"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
-    >
-      <div className="footer-stats-header">
-        <motion.h3 
-          className="footer-stats-title"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          Números que <span className="footer-title-highlight">Impulsionam</span>
-        </motion.h3>
-        <motion.p 
-          className="footer-stats-subtitle"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Resultados reais que transformam operações
-        </motion.p>
-      </div>
-      
-      <div className="footer-stats-grid">
-        {stats.map((stat, idx) => (
-          <motion.div
-            key={stat.label}
-            className="footer-stat-card"
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            whileHover={{ 
-              y: -10,
-              scale: 1.05,
-              boxShadow: `0 20px 40px ${stat.color}30`
-            }}
-            transition={{ 
-              duration: 0.5,
-              delay: idx * 0.1,
-              type: "spring",
-              stiffness: 300
-            }}
-            viewport={{ once: true }}
-          >
-            <div className="footer-stat-content">
-              <motion.div 
-                className="footer-stat-icon"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <stat.icon size={28} />
-                <div 
-                  className="footer-stat-glow"
-                  style={{ background: stat.color }}
-                />
-              </motion.div>
-              
-              <div className="footer-stat-values">
-                <motion.h4 
-                  className="footer-stat-number"
-                  whileHover={{ color: stat.color }}
-                >
-                  {stat.value}
-                </motion.h4>
-                <p className="footer-stat-label">{stat.label}</p>
-              </div>
-              
-              <div className="footer-stat-details">
-                <motion.span 
-                  className="footer-stat-change"
-                  whileHover={{ backgroundColor: stat.color + "40" }}
-                >
-                  <FiTrendingUp size={14} />
-                  <span>{stat.change}</span>
-                </motion.span>
-                <p className="footer-stat-desc">{stat.desc}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.section>
-  );
-};
-
-// ============================================================================
-// COMPONENTE DE SOLUÇÕES
-// ============================================================================
-
-const SolutionsSection = () => {
-  const solutions = useMemo(() => [
-    {
-      title: "Roteirização IA",
-      desc: "Otimização inteligente de rotas",
-      icon: FiNavigation,
-      color: "#f97316",
-      features: ["IA Generativa", "Tempo Real", "Economia 30%"]
-    },
-    {
-      title: "Gestão de Frota",
-      desc: "Controle total da operação",
-      icon: FiTruck,
-      color: "#3b82f6",
-      features: ["GPS Ativo", "Manutenção", "Combustível"]
-    },
-    {
-      title: "Analytics",
-      desc: "Insights em tempo real",
-      icon: FiBarChart2,
-      color: "#10b981",
-      features: ["KPI Dashboard", "Previsões", "BI Integrado"]
-    },
-    {
-      title: "Integrações",
-      desc: "Ecosystema completo",
-      icon: FiGlobe,
-      color: "#8b5cf6",
-      features: ["ERP/CRM", "Marketplaces", "APIs"]
-    }
-  ], []);
-
-  return (
-    <motion.section 
-      className="footer-solutions-section"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
-    >
-      <div className="footer-solutions-header">
-        <div className="footer-header-content">
-          <motion.h2 
-            className="footer-solutions-title"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-          >
-            Soluções <span className="footer-title-gradient">Completas</span>
-          </motion.h2>
-          <motion.p 
-            className="footer-solutions-subtitle"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Plataforma modular para logística 4.0
-          </motion.p>
-        </div>
-        
-        <motion.a 
-          href="/solucoes"
-          className="footer-solutions-cta"
-          whileHover={{ scale: 1.05, x: 5 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span>Ver todas as soluções</span>
-          <FiArrowRight />
-        </motion.a>
-      </div>
-      
-      <div className="footer-solutions-grid">
-        {solutions.map((solution, idx) => (
-          <motion.div
-            key={solution.title}
-            className="footer-solution-card"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            whileHover={{ 
-              y: -15,
-              scale: 1.02,
-              boxShadow: `0 25px 50px ${solution.color}20`
-            }}
-            transition={{ 
-              duration: 0.6,
-              delay: idx * 0.1,
-              type: "spring"
-            }}
-            viewport={{ once: true }}
-          >
-            <div className="footer-solution-header">
-              <motion.div 
-                className="footer-solution-icon"
-                style={{ color: solution.color }}
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-              >
-                <solution.icon size={32} />
-              </motion.div>
-              <div>
-                <h3 className="footer-solution-title">{solution.title}</h3>
-                <p className="footer-solution-desc">{solution.desc}</p>
-              </div>
-            </div>
-            
-            <div className="footer-solution-features">
-              {solution.features.map((feature, fIdx) => (
-                <motion.span
-                  key={feature}
-                  className="footer-feature-tag"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.1 + fIdx * 0.1 }}
-                >
-                  {feature}
-                </motion.span>
-              ))}
-            </div>
-            
-            <motion.div className="footer-solution-action">
-              <motion.a
-                href={`/solucoes/${solution.title.toLowerCase().replace(' ', '-')}`}
-                className="footer-solution-link"
-                style={{ '--link-color': solution.color }}
-                whileHover={{ x: 5, color: solution.color }}
-              >
-                <span>Explorar solução</span>
-                <FiArrowRight size={16} />
-              </motion.a>
-            </motion.div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.section>
-  );
-};
-
-// ============================================================================
-// COMPONENTE DE CONTATO
-// ============================================================================
-
-const ContactSection = () => {
-  const contacts = useMemo(() => [
-    {
-      type: "phone",
-      icon: FiPhone,
-      title: "Telefone",
-      value: "+55 11 4002-8922",
-      desc: "Seg-Sex, 8h às 18h",
-      action: "tel:+551140028922",
-      color: "#f97316"
-    },
-    {
-      type: "email",
-      icon: FiMail,
-      title: "Email",
-      value: "comercial@transita.ai",
-      desc: "Resposta em 2h úteis",
-      action: "mailto:comercial@transita.ai",
-      color: "#3b82f6"
-    },
-    {
-      type: "whatsapp",
-      icon: FiMessageCircle,
-      title: "WhatsApp",
-      value: "+55 11 94002-8922",
-      desc: "Atendimento rápido",
-      action: "https://wa.me/5511940028922",
-      color: "#10b981"
-    },
-    {
-      type: "support",
-      icon: FiHeadphones,
-      title: "Suporte",
-      value: "suporte@transita.ai",
-      desc: "24/7 via ticket",
-      action: "mailto:suporte@transita.ai",
-      color: "#8b5cf6"
-    }
-  ], []);
-
-  return (
-    <motion.section 
-      className="footer-contact-section"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
-    >
-      <div className="footer-contact-background">
-        <div className="footer-contact-wave" />
-        <div className="footer-contact-dots" />
-      </div>
-      
-      <div className="footer-contact-content">
-        <motion.div 
-          className="footer-contact-header"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-        >
-          <h2 className="footer-contact-title">
-            Pronto para <span className="footer-contact-highlight">transformar</span> sua logística?
-          </h2>
-          <p className="footer-contact-subtitle">
-            Fale com nossos especialistas
-          </p>
-        </motion.div>
-        
-        <div className="footer-contact-grid">
-          {contacts.map((contact, idx) => (
-            <motion.a
-              key={contact.type}
-              href={contact.action}
-              className="footer-contact-card"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              whileHover={{ 
-                y: -8,
-                scale: 1.05,
-                boxShadow: `0 15px 30px ${contact.color}25`
-              }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <div className="footer-contact-icon-wrapper" style={{ '--icon-color': contact.color }}>
-                <contact.icon size={24} />
-                <div className="footer-contact-glow" style={{ background: contact.color }} />
-              </div>
-              
-              <div className="footer-contact-info">
-                <h4 className="footer-contact-name">{contact.title}</h4>
-                <p className="footer-contact-value">{contact.value}</p>
-                <span className="footer-contact-desc">{contact.desc}</span>
-              </div>
-              
-              <div className="footer-contact-action">
-                <motion.div
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <FiArrowRight size={18} />
-                </motion.div>
-              </div>
-            </motion.a>
-          ))}
-        </div>
-        
-        <motion.div 
-          className="footer-contact-actions"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <motion.a
-            href="/demo"
-            className="footer-cta-button footer-cta-primary"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FiPlay size={18} />
-            <span>Solicitar Demonstração</span>
-          </motion.a>
-          
-          <motion.a
-            href="/contato"
-            className="footer-cta-button footer-cta-secondary"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FiCalendar size={18} />
-            <span>Agendar Consulta</span>
-          </motion.a>
-        </motion.div>
-      </div>
-    </motion.section>
-  );
-};
-
-// ============================================================================
-// RODAPÉ INFERIOR
-// ============================================================================
-
-const BottomFooter = () => {
-  const currentYear = new Date().getFullYear();
-  const [email, setEmail] = useState('');
-
-  const footerLinks = useMemo(() => [
-    { name: "Início", href: "/", icon: FiChevronRight },
-    { name: "Soluções", href: "/solucoes", icon: FiChevronRight },
-    { name: "Preços", href: "/precos", icon: FiChevronRight },
-    { name: "Clientes", href: "/clientes", icon: FiChevronRight },
-    { name: "Sobre", href: "/sobre", icon: FiChevronRight },
-    { name: "Contato", href: "/contato", icon: FiChevronRight }
-  ], []);
-
-  const legalLinks = useMemo(() => [
-    { name: "Privacidade", href: "/privacidade" },
-    { name: "Termos", href: "/termos" },
-    { name: "LGPD", href: "/lgpd" },
-    { name: "Cookies", href: "/cookies" },
-    { name: "Segurança", href: "/seguranca" }
-  ], []);
-
-  const socialLinks = useMemo(() => [
-    { icon: FiLinkedin, href: "#", label: "LinkedIn", color: "#0077B5" },
-    { icon: FiTwitter, href: "#", label: "Twitter", color: "#1DA1F2" },
-    { icon: FiInstagram, href: "#", label: "Instagram", color: "#E4405F" },
-    { icon: FiMessageCircle, href: "#", label: "WhatsApp", color: "#25D366" }
-  ], []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Newsletter submission logic
-    console.log('Newsletter subscription:', email);
-    setEmail('');
-  };
-
-  return (
-    <motion.div 
-      className="footer-bottom-section"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-    >
-      <div className="footer-bottom-container">
-        <div className="footer-bottom-grid">
-          {/* Coluna Empresa */}
-          <div className="footer-bottom-column">
-            <h3 className="footer-column-title">Empresa</h3>
-            <div className="footer-company-info">
-              <div className="footer-company-logo">
-                TRANSITA<span className="footer-company-ai">.AI</span>
-              </div>
-              <p className="footer-company-desc">
-                Tecnologia de ponta para logística inteligente e eficiente
-              </p>
-              <div className="footer-certifications">
-                <div className="footer-certificate">
-                  <FiShield size={16} />
-                  <span>ISO 27001</span>
-                </div>
-                <div className="footer-certificate">
-                  <FiCheck size={16} />
-                  <span>LGPD Compliant</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Coluna Links */}
-          <div className="footer-bottom-column">
-            <h3 className="footer-column-title">Navegação</h3>
-            <div className="footer-links-grid">
-              {footerLinks.map((link, idx) => (
-                <motion.a
-                  key={link.name}
-                  href={link.href}
-                  className="footer-bottom-link"
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  whileHover={{ x: 5, color: "#f97316" }}
-                  transition={{ delay: idx * 0.05 }}
-                  viewport={{ once: true }}
-                >
-                  <link.icon size={12} />
-                  <span>{link.name}</span>
-                </motion.a>
-              ))}
-            </div>
-          </div>
-
-          {/* Coluna Newsletter */}
-          <div className="footer-bottom-column">
-            <h3 className="footer-column-title">Fique por dentro</h3>
-            <div className="footer-newsletter">
-              <p className="footer-newsletter-text">
-                Insights e novidades sobre logística inteligente
-              </p>
-              <form onSubmit={handleSubmit} className="footer-newsletter-form">
-                <div className="footer-newsletter-input-wrapper">
-                  <FiMail className="footer-newsletter-icon" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    className="footer-newsletter-input"
-                    required
-                  />
-                </div>
-                <motion.button
-                  type="submit"
-                  className="footer-newsletter-button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <FiArrowRight size={18} />
-                </motion.button>
-              </form>
-              <div className="footer-legal-links">
-                {legalLinks.map((link) => (
-                  <a key={link.name} href={link.href} className="footer-legal-link">
-                    {link.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="footer-divider" />
-
-        <div className="footer-bottom-bar">
-          <div className="footer-copyright">
-            <span>&copy; {currentYear} Transita.AI</span>
-            <span>Todos os direitos reservados</span>
-          </div>
-          
-          <div className="footer-social-links">
-            {socialLinks.map((social) => (
-              <motion.a
-                key={social.label}
-                href={social.href}
-                className="footer-social-link"
-                style={{ '--social-color': social.color }}
-                aria-label={social.label}
-                whileHover={{ scale: 1.2, rotate: 360 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <social.icon size={20} />
-              </motion.a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ============================================================================
-// COMPONENTE PRINCIPAL
-// ============================================================================
+const SocialLink = memo(({ social, index }) => (
+  <motion.a
+    href={social.href}
+    className="footer-social-link"
+    style={{ '--social-color': social.color }}
+    aria-label={social.label}
+    initial={{ opacity: 0, scale: 0 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    whileHover={{ 
+      scale: 1.2, 
+      rotate: [0, -10, 10, 0],
+      y: -5,
+      backgroundColor: social.color
+    }}
+    whileTap={{ scale: 0.9 }}
+    transition={{ 
+      delay: index * 0.1,
+      type: "spring",
+      stiffness: 400 
+    }}
+    viewport={{ once: true }}
+  >
+    <social.icon size={20} />
+    <span className="footer-social-tooltip">{social.label}</span>
+  </motion.a>
+));
 
 const Footer = () => {
   const [email, setEmail] = useState('');
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  // Scroll listener otimizado
+  React.useEffect(() => {
+    let ticking = false;
+    
+    const updateBackToTop = () => {
+      setShowBackToTop(window.scrollY > 500);
+      ticking = false;
+    };
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateBackToTop);
+        ticking = true;
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    console.log('Newsletter subscription:', email);
-    setEmail('');
-  };
+    
+    if (!email) return;
+    
+    try {
+      // Simulação de API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Newsletter subscription:', email);
+      setNewsletterSuccess(true);
+      setEmail('');
+      
+      // Reset success message after 5 seconds
+      setTimeout(() => setNewsletterSuccess(false), 5000);
+    } catch (error) {
+      console.error('Subscription error:', error);
+    }
+  }, [email]);
+
+  // Data arrays
+  const platformLinks = [
+    { name: "Dashboard", href: "/dashboard", desc: "Análises em tempo real", badge: "NEW" },
+    { name: "Soluções", href: "/solucoes", desc: "Módulos completos", icon: FiPackage },
+    { name: "Gestão de Multas", href: "/multas", desc: "Prevenção inteligente", icon: FiShield },
+    { name: "Roteirização IA", href: "/roteirizacao", desc: "Otimização de rotas", icon: FiTruck },
+    { name: "Monitoramento", href: "/monitoramento", desc: "GPS ao vivo", icon: FiGlobe },
+    { name: "Relatórios", href: "/relatorios", desc: "BI avançado", icon: FiTrendingUp },
+    { name: "API", href: "/api", desc: "Integrações", badge: "DEV" },
+    { name: "Mobile App", href: "/app", desc: "iOS & Android", icon: FiSmartphone }
+  ];
+
+  const companyLinks = [
+    { name: "Sobre nós", href: "/sobre", icon: FiStar },
+    { name: "Carreiras", href: "/carreiras", badge: "WE'RE HIRING" },
+    { name: "Blog", href: "/blog", icon: FiFileText },
+    { name: "Cases", href: "/cases", desc: "Histórias de sucesso" },
+    { name: "Parceiros", href: "/parceiros", icon: FiAward },
+    { name: "Imprensa", href: "/imprensa", desc: "Na mídia" },
+    { name: "Eventos", href: "/eventos", icon: FiCalendar },
+    { name: "Contato", href: "/contato", desc: "Fale conosco" }
+  ];
+
+  const resourceLinks = [
+    { name: "Documentação", href: "/docs", icon: FiFileText },
+    { name: "Tutoriais", href: "/tutoriais", desc: "Vídeos passo a passo" },
+    { name: "FAQ", href: "/faq", icon: FiHeadphones },
+    { name: "Webinars", href: "/webinars", badge: "LIVE" },
+    { name: "E-books", href: "/ebooks", icon: FiDownload },
+    { name: "Calculadora ROI", href: "/roi", desc: "Calcule sua economia" },
+    { name: "Status", href: "/status", desc: "Sistema online" },
+    { name: "Suporte", href: "/support", icon: FiHeadphones }
+  ];
+
+  const legalLinks = [
+    { name: "Termos de Uso", href: "/termos" },
+    { name: "Privacidade", href: "/privacidade" },
+    { name: "LGPD", href: "/lgpd" },
+    { name: "Cookies", href: "/cookies" },
+    { name: "Segurança", href: "/seguranca" },
+    { name: "SLA", href: "/sla", badge: "99.9%" },
+    { name: "DPO", href: "/dpo", desc: "Encarregado de dados" },
+    { name: "Acessibilidade", href: "/acessibilidade" }
+  ];
+
+  const contactInfo = [
+    { icon: FiMail, text: "comercial@transita.ai", href: "mailto:comercial@transita.ai", label: "Email comercial", type: "email" },
+    { icon: FiSmartphone, text: "+55 11 4002-8922", href: "tel:+551140028922", label: "Telefone principal", type: "phone" },
+    { icon: FiMessageCircle, text: "WhatsApp", href: "https://wa.me/5511940028922", label: "WhatsApp Business", type: "whatsapp", badge: "Rápido" },
+    { icon: FiMapPin, text: "São Paulo - SP", href: "https://maps.google.com", label: "Escritório matriz", type: "location" },
+    { icon: FiHeadphones, text: "suporte@transita.ai", href: "mailto:suporte@transita.ai", label: "Suporte técnico", type: "support" }
+  ];
+
+  const socialLinks = [
+    { icon: FiLinkedin, href: "#", label: "LinkedIn", color: "#0077B5" },
+    { icon: FiTwitter, href: "#", label: "Twitter", color: "#1DA1F2" },
+    { icon: FiInstagram, href: "#", label: "Instagram", color: "#E4405F" },
+    { icon: FiMessageCircle, href: "#", label: "WhatsApp", color: "#25D366" },
+    { icon: FiDownload, href: "#", label: "App Store", color: "#000000" }
+  ];
+
+  const certifications = [
+    { name: "ISO 27001", desc: "Segurança da Informação", icon: FiShield },
+    { name: "LGPD Compliant", desc: "Conformidade total", icon: FiCheck },
+    { name: "AWS Advanced", desc: "Parceiro AWS", icon: FiZap },
+    { name: "GDPR Ready", desc: "Europa", icon: FiGlobe },
+    { name: "SOC 2", desc: "Auditoria completa", icon: FiAward }
+  ];
+
+  const downloadLinks = [
+    { name: "Whitepaper AI", href: "/whitepaper", icon: FiDownload, size: "2.4 MB" },
+    { name: "Case Santander", href: "/case-santander", icon: FiFileText, badge: "NEW" },
+    { name: "App iOS", href: "/app-ios", icon: FiSmartphone },
+    { name: "App Android", href: "/app-android", icon: FiSmartphone }
+  ];
+
+  // Componentes
+  const ContactItem = memo(({ contact, index }) => (
+    <motion.a
+      href={contact.href}
+      className={`footer-contact-item footer-contact-${contact.type}`}
+      aria-label={contact.label}
+      initial={{ opacity: 0, x: -20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      whileHover={{ x: 5, scale: 1.02 }}
+      transition={{ delay: index * 0.1, type: "spring" }}
+      viewport={{ once: true }}
+    >
+      <div className="footer-contact-icon-wrapper">
+        <contact.icon size={18} />
+      </div>
+      <div className="footer-contact-content">
+        <span className="footer-contact-text">{contact.text}</span>
+        {contact.badge && (
+          <span className="footer-contact-badge">{contact.badge}</span>
+        )}
+      </div>
+      <FiExternalLink className="footer-contact-external" />
+    </motion.a>
+  ));
+
+  const DownloadLink = memo(({ link, index }) => (
+    <motion.a
+      href={link.href}
+      className="footer-download-link"
+      initial={{ opacity: 0, x: -10 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      whileHover={{ x: 5 }}
+      transition={{ delay: index * 0.1 }}
+      viewport={{ once: true }}
+    >
+      <link.icon size={16} />
+      <span className="footer-download-text">{link.name}</span>
+      {link.size && (
+        <span className="footer-download-size">{link.size}</span>
+      )}
+      {link.badge && (
+        <span className="footer-download-badge">{link.badge}</span>
+      )}
+      <FiDownload className="footer-download-icon" />
+    </motion.a>
+  ));
 
   return (
-    <footer className="footer-simple">
+    <footer className="footer" role="contentinfo">
+      {/* Back to Top Button */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            className="footer-back-to-top"
+            onClick={scrollToTop}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            whileHover={{ scale: 1.1, y: -5 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Voltar ao topo"
+          >
+            <FiChevronUp size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <div className="footer-container">
-        {/* Seção Principal */}
-        <div className="footer-main">
-          <div className="footer-brand">
-            <h2 className="footer-title">Transita.AI</h2>
-            <p className="footer-description">
-              Revolucionando a logística com inteligência artificial, dados em tempo real e foco absoluto em ROI para nossos clientes.
-            </p>
+        {/* Main Content */}
+        <div className="footer-main-content">
+          {/* Brand & Newsletter Section */}
+          <div className="footer-brand-newsletter">
+            {/* Brand Section */}
+            <motion.div 
+              className="footer-brand-section"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="footer-brand">
+                <div className="footer-logo-container">
+                  <motion.div 
+                    className="footer-logo"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                  >
+                    <img src={logoBanner} alt="Transita.AI Logo" className="footer-logo-image" />
+                    <span className="footer-logo-text">TRANSITA</span>
+                    <motion.span 
+                      className="footer-logo-ai"
+                      animate={{ opacity: [1, 0.8, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      .AI
+                    </motion.span>
+                  </motion.div>
+                  <div className="footer-logo-tagline">
+                    <FiZap className="footer-zap-icon" />
+                    <span>Logística Inteligente</span>
+                  </div>
+                </div>
+
+                <p className="footer-brand-description">
+                  Revolucionamos a gestão logística com inteligência artificial, 
+                  automação e dados em tempo real. Mais eficiência, menos custos, 
+                  resultados mensuráveis.
+                </p>
+
+                {/* Download Links */}
+                <div className="footer-downloads">
+                  <h4 className="footer-downloads-title">Recursos para download</h4>
+                  <div className="footer-downloads-grid">
+                    {downloadLinks.map((link, index) => (
+                      <DownloadLink key={link.name} link={link} index={index} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Section */}
+              <div className="footer-contact-section">
+                <h3 className="footer-contact-title">Fale conosco</h3>
+                <div className="footer-contact-list">
+                  {contactInfo.map((contact, index) => (
+                    <ContactItem key={index} contact={contact} index={index} />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Newsletter Section */}
+            <motion.div 
+              className="footer-newsletter-section"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="footer-newsletter-card">
+                <div className="footer-newsletter-header">
+                  <div className="footer-newsletter-icon-wrapper">
+                    <FiMail size={24} />
+                  </div>
+                  <div>
+                    <h3 className="footer-newsletter-title">Newsletter Transita.AI</h3>
+                    <p className="footer-newsletter-subtitle">
+                      Insights semanais de logística & IA
+                    </p>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {newsletterSuccess ? (
+                    <motion.div
+                      className="footer-newsletter-success"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <FiCheck size={24} />
+                      <div>
+                        <h4>Inscrição confirmada!</h4>
+                        <p>Enviamos um email de confirmação para você.</p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="footer-newsletter-form">
+                      <div className="footer-input-wrapper">
+                        <FiMail className="footer-input-icon" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="seu@email.com"
+                          className="footer-newsletter-input"
+                          required
+                          aria-label="Email para newsletter"
+                        />
+                        <motion.button
+                          type="submit"
+                          className="footer-newsletter-button"
+                          whileHover={{ scale: 1.05, x: 5 }}
+                          whileTap={{ scale: 0.95 }}
+                          disabled={!email}
+                        >
+                          <FiArrowRight size={20} />
+                        </motion.button>
+                      </div>
+                      
+                      <div className="footer-newsletter-features">
+                        <span className="footer-feature">
+                          <FiCheck size={14} />
+                          Sem spam
+                        </span>
+                        <span className="footer-feature">
+                          <FiCheck size={14} />
+                          Conteúdo exclusivo
+                        </span>
+                        <span className="footer-feature">
+                          <FiCheck size={14} />
+                          Cancelar a qualquer momento
+                        </span>
+                      </div>
+                    </form>
+                  )}
+                </AnimatePresence>
+
+                {/* Certifications */}
+                <div className="footer-certifications">
+                  <h4 className="footer-certifications-title">Certificações e selos</h4>
+                  <div className="footer-certifications-grid">
+                    {certifications.map((cert, index) => (
+                      <div key={cert.name} className="footer-certification">
+                        <div className="footer-certification-icon">
+                          <cert.icon size={16} />
+                        </div>
+                        <div className="footer-certification-content">
+                          <div className="footer-certification-name">{cert.name}</div>
+                          <div className="footer-certification-desc">{cert.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
-          {/* Grid de Links */}
+          {/* Links Grid */}
           <div className="footer-links-grid">
-            {/* Coluna Plataforma */}
-            <div className="footer-column">
-              <h3 className="footer-column-title">Plataforma</h3>
-              <ul className="footer-links">
-                <li><a href="/dashboard">Dashboard</a></li>
-                <li><a href="/multas">Gestão de Multas</a></li>
-                <li><a href="/manutencao">Manutenção Preditiva</a></li>
-                <li><a href="/rastreamento">Rastreamento</a></li>
+            <div className="footer-links-column">
+              <h3 className="footer-links-title">
+                <FiPackage className="footer-links-title-icon" />
+                Plataforma
+              </h3>
+              <ul className="footer-links-list">
+                {platformLinks.map((link, index) => (
+                  <FooterLink key={link.name} link={link} index={index} />
+                ))}
               </ul>
             </div>
 
-            {/* Coluna Empresa */}
-            <div className="footer-column">
-              <h3 className="footer-column-title">Empresa</h3>
-              <ul className="footer-links">
-                <li><a href="/sobre">Sobre nós</a></li>
-                <li><a href="/carreiras">Carreiras</a></li>
-                <li><a href="/blog">Blog</a></li>
-                <li><a href="/privacidade">Privacidade</a></li>
+            <div className="footer-links-column">
+              <h3 className="footer-links-title">
+                <FiStar className="footer-links-title-icon" />
+                Empresa
+              </h3>
+              <ul className="footer-links-list">
+                {companyLinks.map((link, index) => (
+                  <FooterLink key={link.name} link={link} index={index} />
+                ))}
               </ul>
             </div>
 
-            {/* Coluna Newsletter */}
-            <div className="footer-column">
-              <h3 className="footer-column-title">Newsletter</h3>
-              <p className="footer-newsletter-text">
-                Receba as últimas tendências de logística e IA.
-              </p>
-              <form onSubmit={handleSubmit} className="footer-newsletter-form">
-                <div className="footer-input-group">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Seu email"
-                    className="footer-email-input"
-                    required
-                  />
-                  <button type="submit" className="footer-submit-btn">
-                    <FiArrowRight size={18} />
-                  </button>
-                </div>
-              </form>
+            <div className="footer-links-column">
+              <h3 className="footer-links-title">
+                <FiFileText className="footer-links-title-icon" />
+                Recursos
+              </h3>
+              <ul className="footer-links-list">
+                {resourceLinks.map((link, index) => (
+                  <FooterLink key={link.name} link={link} index={index} />
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Social & CTA Section */}
+          <div className="footer-social-cta">
+            <div className="footer-social-section">
+              <h3 className="footer-social-title">Conecte-se conosco</h3>
+              <div className="footer-social-links">
+                {socialLinks.map((social, index) => (
+                  <SocialLink key={social.label} social={social} index={index} />
+                ))}
+              </div>
+            </div>
+
+            <div className="footer-cta-section">
+              <div className="footer-cta-content">
+                <h2 className="footer-cta-title">
+                  Transforme sua logística com <span className="footer-cta-highlight">IA</span>
+                </h2>
+                <p className="footer-cta-subtitle">
+                  Demonstração personalizada em 30 minutos. Resultados em 30 dias.
+                </p>
+              </div>
+              <div className="footer-cta-buttons">
+                <motion.a
+                  href="/demo"
+                  className="footer-cta-button footer-cta-primary"
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FiPlay size={18} />
+                  <span>Solicitar Demo</span>
+                  <span className="footer-cta-badge">Gratuita</span>
+                </motion.a>
+                
+                <motion.a
+                  href="/contato"
+                  className="footer-cta-button footer-cta-secondary"
+                  whileHover={{ scale: 1.05, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FiCalendar size={18} />
+                  <span>Agendar Consulta</span>
+                </motion.a>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Rodapé Inferior */}
+        {/* Footer Bottom */}
         <div className="footer-bottom">
-          <div className="footer-copyright">
-            <p>&copy; 2024 Transita.AI. Todos os direitos reservados.</p>
+          <div className="footer-bottom-content">
+            <div className="footer-copyright">
+              <div className="footer-copyright-main">
+                <span>&copy; {new Date().getFullYear()} Transita.AI</span>
+                <span className="footer-copyright-separator">•</span>
+                <span>Todos os direitos reservados</span>
+              </div>
+              <div className="footer-version">
+                <span>v2.8.1</span>
+                <span className="footer-version-badge">Stable</span>
+              </div>
+            </div>
+            
+            <div className="footer-legal-links">
+              {legalLinks.map((link, index) => (
+                <React.Fragment key={link.name}>
+                  <a href={link.href} className="footer-legal-link">
+                    {link.name}
+                    {link.badge && (
+                      <span className="footer-legal-badge">{link.badge}</span>
+                    )}
+                  </a>
+                  {index < legalLinks.length - 1 && (
+                    <span className="footer-legal-separator">•</span>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -803,4 +531,4 @@ const Footer = () => {
   );
 };
 
-export default React.memo(Footer);
+export default memo(Footer);

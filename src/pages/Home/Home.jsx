@@ -1,10 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
+
+// Hook personalizado para animação de digitação
+const useTypewriter = (text, speed = 100) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, speed);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text, speed]);
+
+  return displayText;
+};
+import logoBanner from '../../assets/images/Logo/Logotipofretevelocidadelaranja.png';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+import { Dialog, Disclosure, Tab, Transition, Listbox, Menu } from '@headlessui/react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  RadialLinearScale,
+  Filler
+} from 'chart.js';
+import { Line, Bar, Doughnut, Radar, Scatter } from 'react-chartjs-2';
 import {
   FaRobot, FaTruck, FaRoute, FaChartLine, FaDollarSign,
   FaWrench, FaUserCog, FaBell, FaClock, FaShieldAlt,
   FaMapMarkerAlt, FaGasPump, FaUsers, FaCogs, FaDatabase,
   FaCloud, FaMobileAlt, FaDesktop, FaChartBar, FaFilter,
-  FaChevronRight, FaPlay, FaCalendarAlt, FaCheckCircle,
+  FaChevronRight, FaPlay, FaCalendarAlt, FaCheckCircle, FaCheck, FaInfoCircle,
   FaPhone, FaWhatsapp, FaEnvelope, FaVideo, FaComments,
   FaLinkedin, FaInstagram, FaFacebook, FaStar, FaRegStar,
   FaArrowUp, FaArrowDown, FaSync, FaBolt, FaLeaf,
@@ -15,7 +52,12 @@ import {
   FaChartPie, FaExclamationTriangle, FaMoneyBillWave,
   FaRegClock, FaSyncAlt, FaDatabase as FaDatabaseIcon,
   FaPlug, FaCog, FaEye, FaEyeSlash, FaPercent,
-  FaChevronUp, FaGasPump as FaFuel, FaTools
+  FaChevronUp, FaGasPump as FaFuel, FaTools,
+  FaTachometerAlt, FaTrafficLight, FaRoute as FaRouteIcon,
+  FaExclamationCircle, FaDownload, FaUpload, FaTrash,
+  FaEdit, FaCopy, FaShare, FaExternalLinkAlt, FaQrcode,
+  FaGlobe, FaKey, FaServer, FaNetworkWired, FaCogs as FaCogsIcon,
+  FaPaperPlane, FaRocket, FaTimes
 } from 'react-icons/fa';
 import {
   MdDashboard, MdLocationOn, MdAnalytics, MdSecurity,
@@ -27,7 +69,9 @@ import {
   MdCompareArrows, MdArrowForward, MdCheckCircle,
   MdWarning, MdInfo, MdTimeline, MdBarChart,
   MdPieChart, MdTrendingFlat, MdAccountBalance,
-  MdCompare, MdOutlineStorage, MdOutlinePolicy
+  MdCompare, MdOutlineStorage, MdOutlinePolicy,
+  MdOutlineNotifications, MdOutlineAccountBalanceWallet,
+  MdOutlineLocalShipping, MdOutlineFingerprint
 } from 'react-icons/md';
 import {
   GiCarWheel, GiMoneyStack, GiPathDistance, GiMechanicGarage,
@@ -44,20 +88,90 @@ import { BsLightningFill, BsGraphUp, BsShieldCheck, BsClockHistory } from 'react
 import { AiFillSafetyCertificate, AiOutlinePercentage, AiOutlineRocket } from 'react-icons/ai';
 import './Home.css';
 
+// Registrar componentes do Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  RadialLinearScale,
+  Filler
+);
+
 // ==========================================================================
 // COMPONENTES REUTILIZÁVEIS
 // ==========================================================================
 
 // Componente Badge Premium
-const PremiumBadge = ({ text, icon, color = 'blue' }) => (
-  <div className={`transita-premium-badge badge-${color}`}>
-    {icon && <span className="badge-icon">{icon}</span>}
-    <span className="badge-text">{text}</span>
-  </div>
-);
+const PremiumBadge = ({ text, icon, color = 'blue', variant = 'solid' }) => {
+  const variants = {
+    solid: `badge-${color}`,
+    outline: `badge-outline-${color}`,
+    subtle: `badge-subtle-${color}`
+  };
 
-// Componente Metric Card Avançado
-const MetricCard = ({ title, value, change, icon, trend = 'up', delay = 0 }) => {
+  return (
+    <div className={`transita-premium-badge ${variants[variant]}`}>
+      {icon && <span className="badge-icon">{icon}</span>}
+      <span className="badge-text">{text}</span>
+    </div>
+  );
+};
+
+// Componente Counter (reutilizável)
+const Counter = ({ end = 0, duration = 1500, decimals = 0, suffix = '' }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !startedRef.current) {
+            startedRef.current = true;
+            const target = parseFloat(end) || 0;
+            const steps = 60;
+            const increment = target / steps;
+            let current = 0;
+            const interval = setInterval(() => {
+              current += increment;
+              if (current >= target) {
+                setCount(Number(target.toFixed(decimals)));
+                clearInterval(interval);
+              } else {
+                setCount(Number(current.toFixed(decimals)));
+              }
+            }, duration / steps);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [end, duration, decimals]);
+
+  const formatted = Number(count).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+  return (
+    <span ref={ref}>
+      {formatted}{suffix}
+    </span>
+  );
+};
+
+// Componente Metric Card
+const MetricCard = ({ title, value, change, icon, chartData, trend = 'up', delay = 0 }) => {
   const [count, setCount] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
@@ -72,7 +186,7 @@ const MetricCard = ({ title, value, change, icon, trend = 'up', delay = 0 }) => 
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.3 }
     );
 
     if (ref.current) observer.observe(ref.current);
@@ -102,6 +216,28 @@ const MetricCard = ({ title, value, change, icon, trend = 'up', delay = 0 }) => 
     }
   }, [isVisible, value]);
 
+  const miniChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true, mode: 'index', intersect: false }
+    },
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { display: false },
+      y: { display: false }
+    },
+    elements: {
+      point: { radius: 0, hoverRadius: 4 },
+      line: { 
+        tension: 0.4,
+        borderWidth: 2,
+        fill: true
+      }
+    }
+  };
+
   return (
     <div 
       ref={ref}
@@ -116,148 +252,47 @@ const MetricCard = ({ title, value, change, icon, trend = 'up', delay = 0 }) => 
       <div className="metric-content">
         <div className="metric-value">
           {typeof value === 'string' && value.includes('R$') ? 'R$ ' : ''}
-          {typeof value === 'string' && value.includes('%') ? count.toFixed(1) + '%' : count}
+          {typeof value === 'string' && value.includes('%') ? count.toFixed(1) + '%' : count.toLocaleString()}
           {typeof value === 'string' && value.includes('h') && !value.includes('R$') && !value.includes('%') ? 'h' : ''}
         </div>
         <div className="metric-title">{title}</div>
       </div>
       
+      {chartData && (
+        <div className="metric-chart">
+          <Line 
+            data={chartData}
+            options={miniChartOptions}
+            height={80}
+          />
+        </div>
+      )}
+      
       <div className={`metric-trend trend-${trend}`}>
         {trend === 'up' ? <FaArrowUp /> : <FaArrowDown />}
         <span>{change}</span>
-      </div>
-      
-      <div className="metric-progress">
-        <div 
-          className={`progress-bar ${trend}`}
-          style={{ width: `${trend === 'up' ? '85%' : '60%'}` }}
-        />
       </div>
     </div>
   );
 };
 
-// Componente Animated Counter
-const AnimatedCounter = ({ value, suffix = '', duration = 1500, decimals = 0 }) => {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      const target = parseFloat(value);
-      const steps = 60;
-      const increment = target / steps;
-      let current = 0;
-      
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-          setCount(target);
-          clearInterval(timer);
-        } else {
-          setCount(parseFloat(current.toFixed(decimals)));
-        }
-      }, duration / steps);
-      
-      return () => clearInterval(timer);
-    }
-  }, [isVisible, value, duration, decimals]);
-
-  return (
-    <span ref={ref} className="animated-counter">
-      {count.toLocaleString()}{suffix}
-    </span>
-  );
-};
-
-// Componente Video Hero Interativo
+// Componente Video Hero Corrigido
 const VideoHero = () => {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const videoRef = useRef(null);
-  const containerRef = useRef(null);
-  const progressBarRef = useRef(null);
 
-  useEffect(() => {
-    const handleTimeUpdate = () => {
-      if (videoRef.current) {
-        setCurrentTime(videoRef.current.currentTime);
-        setDuration(videoRef.current.duration);
-      }
-    };
+  // Animação baseada em scroll
+  const { scrollY } = useScroll();
+  const y = useSpring(useTransform(scrollY, [0, 1000], [0, -500])); // Move para cima ao rolar
+  const yLogo = useSpring(useTransform(scrollY, [0, 1000], [0, 300])); // Logo move para baixo
+  const opacity = useSpring(useTransform(scrollY, [0, 500], [1, 0])); // Fade out
 
-    const handleMouseMove = (e) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        setMousePosition({ x, y });
-        
-        // Controlar velocidade do vídeo baseado na posição do mouse
-        if (videoRef.current) {
-          const normalizedX = (x / rect.width) * 2 - 1; // -1 a 1
-          const playbackRate = 0.5 + Math.abs(normalizedX); // 0.5x a 1.5x
-          videoRef.current.playbackRate = playbackRate;
-        }
-      }
-    };
+  // Animação de digitação para o título
+  const typewriterText = useTypewriter('Inteligência Artificial para Logística Inteligente', 80);
 
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const heroHeight = containerRef.current?.offsetHeight || 0;
-      const progress = Math.min(scrollTop / heroHeight, 1);
-      setScrollProgress(progress);
-      
-      // Efeito parallax no vídeo
-      if (videoRef.current) {
-        const parallaxValue = progress * 20; // 20% de movimento
-        videoRef.current.style.transform = `translateY(${parallaxValue}%) scale(${1 + progress * 0.1})`;
-      }
-    };
-
-    const video = videoRef.current;
-    if (video) {
-      video.addEventListener('timeupdate', handleTimeUpdate);
-      video.addEventListener('loadedmetadata', () => {
-        setDuration(video.duration);
-      });
-    }
-
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => {
-      if (video) {
-        video.removeEventListener('timeupdate', handleTimeUpdate);
-      }
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  const handlePlayPause = () => {
+  const handleVideoControl = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -268,35 +303,6 @@ const VideoHero = () => {
     }
   };
 
-  const handleSeek = (e) => {
-    if (videoRef.current && progressBarRef.current) {
-      const rect = progressBarRef.current.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const percentage = clickX / rect.width;
-      const seekTime = percentage * duration;
-      videoRef.current.currentTime = seekTime;
-      setCurrentTime(seekTime);
-    }
-  };
-
-  const handleSkipForward = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration);
-    }
-  };
-
-  const handleSkipBackward = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
-    }
-  };
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const handleVolumeToggle = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
@@ -304,23 +310,8 @@ const VideoHero = () => {
     }
   };
 
-  const handleMouseMove = (e) => {
-    const rect = containerRef.current.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  };
-
   return (
-    <div 
-      ref={containerRef}
-      className="video-hero-container"
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Video Background com Efeito Parallax */}
+    <div className="video-hero-container">
       <div className="video-background">
         <video
           ref={videoRef}
@@ -329,172 +320,146 @@ const VideoHero = () => {
           muted={isMuted}
           loop
           playsInline
+          onClick={handleVideoControl}
         >
           <source src="https://assets.mixkit.co/videos/preview/mixkit-city-traffic-at-night-3457-large.mp4" type="video/mp4" />
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-trucks-on-a-highway-from-above-3456-large.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
+          Seu navegador não suporta o elemento de vídeo.
         </video>
         
-        {/* Overlay Gradiente */}
         <div className="video-overlay">
           <div className="overlay-gradient overlay-top" />
           <div className="overlay-gradient overlay-bottom" />
-          <div className="overlay-gradient overlay-left" />
-          <div className="overlay-gradient overlay-right" />
         </div>
-        
-        {/* Efeitos Visuais */}
-        <div className="video-effects">
-          <div 
-            className="scan-line"
-            style={{ 
-              top: `${mousePosition.y}px`,
-              opacity: isHovered ? 0.6 : 0.2 
-            }}
-          />
-          <div 
-            className="mouse-glow"
-            style={{ 
-              left: `${mousePosition.x}px`,
-              top: `${mousePosition.y}px`,
-              opacity: isHovered ? 1 : 0.5 
-            }}
-          />
-          
-          {/* Grid Interativo */}
-          <div className="interactive-grid">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div 
-                key={i}
-                className="grid-line"
-                style={{
-                  transform: `translateX(${mousePosition.x * 0.02}px) translateY(${mousePosition.y * 0.02}px)`
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      {/* Controles do Vídeo */}
-      <div className={`video-controls ${isHovered ? 'visible' : ''}`}>
-        <div className="controls-top">
-          <div className="control-group">
+
+        <div className={`video-controls-overlay ${showControls ? 'visible' : ''}`}>
+          <div className="controls-wrapper">
             <button 
-              className="control-btn"
-              onClick={handleSkipBackward}
-              title="Voltar 10s"
-            >
-              <FaChevronLeft />
-              <span>10s</span>
-            </button>
-            
-            <button 
-              className="control-btn play-btn"
-              onClick={handlePlayPause}
-              title={isPlaying ? 'Pausar' : 'Reproduzir'}
+              className="control-btn play-pause"
+              onClick={handleVideoControl}
+              aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
             >
               {isPlaying ? <FaPause /> : <FaPlayCircle />}
             </button>
             
             <button 
-              className="control-btn"
-              onClick={handleSkipForward}
-              title="Avançar 10s"
-            >
-              <span>10s</span>
-              <FaChevronRight />
-            </button>
-            
-            <button 
-              className="control-btn volume-btn"
+              className="control-btn volume"
               onClick={handleVolumeToggle}
-              title={isMuted ? 'Ativar som' : 'Desativar som'}
+              aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
             >
               {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
             </button>
           </div>
-          
-          <div className="time-display">
-            <span className="current-time">{formatTime(currentTime)}</span>
-            <span className="time-separator">/</span>
-            <span className="total-time">{formatTime(duration)}</span>
-          </div>
-        </div>
-        
-        <div 
-          ref={progressBarRef}
-          className="progress-container"
-          onClick={handleSeek}
-        >
-          <div className="progress-bar-background">
-            <div 
-              className="progress-bar-fill"
-              style={{ width: `${(currentTime / duration) * 100}%` }}
-            />
-            <div 
-              className="progress-bar-thumb"
-              style={{ left: `${(currentTime / duration) * 100}%` }}
-            />
-          </div>
-          
-          {/* Marcadores de tempo interativos */}
-          <div className="time-markers">
-            {[0, 15, 30, 45, 60].map((time) => (
-              <div 
-                key={time}
-                className="time-marker"
-                style={{ left: `${(time / duration) * 100}%` }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = time;
-                  }
-                }}
-              >
-                <div className="marker-dot" />
-                <span className="marker-label">{time}s</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Indicador de Controle por Mouse */}
-        <div className="mouse-control-indicator">
-          <div className="indicator-text">
-            <FaChevronLeft />
-            <span>Arraste horizontalmente para controlar velocidade</span>
-            <FaChevronRight />
-          </div>
-          <div className="indicator-subtext">
-            Role para baixo para efeito parallax
-          </div>
         </div>
       </div>
-      
-      {/* Indicador de Progresso do Scroll */}
-      <div className="scroll-progress-indicator">
-        <div className="progress-circle">
-          <svg className="progress-ring" width="60" height="60">
-            <circle
-              className="progress-ring-circle"
-              strokeWidth="2"
-              fill="transparent"
-              r="27"
-              cx="30"
-              cy="30"
-              style={{
-                strokeDasharray: 169.56,
-                strokeDashoffset: 169.56 - (scrollProgress * 169.56)
-              }}
+
+      <div className="hero-content hero-container container">
+        <motion.div 
+          className="hero-left animate-on-scroll"
+          style={{ y, opacity }}
+        >
+          <div className="hero-badge">
+            <PremiumBadge 
+              text="REVOLUCIONE SUA FROTA" 
+              color="orange" 
+              variant="solid"
             />
-          </svg>
-          <div className="progress-percentage">
-            {Math.round(scrollProgress * 100)}%
           </div>
+          
+          <>
+            <style>{`#heroTitleInline{display:inline-block!important; background: linear-gradient(90deg, var(--green-900), var(--green-400)) !important; background-size:100% 100% !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; color: var(--green-900) !important;` + `} #heroTitleInline .typewriter-cursor{color:var(--green-400) !important;}`}</style>
+            <h1 id="heroTitleInline" className="hero-title">
+              {typewriterText}
+              <span className="typewriter-cursor">|</span>
+            </h1>
+          </>
+          
+          <p className="hero-description">
+            Reduza custos em até 40%, otimize rotas com IA preditiva e transforme 
+            sua operação logística com tecnologia de ponta.
+          </p>
+          
+          <div className="hero-actions">
+            <button className="transita-btn transita-btn-primary transita-btn-xl">
+              <FaPlay />
+              <span>Começar Demonstração</span>
+            </button>
+            
+            <button className="transita-btn transita-btn-secondary transita-btn-xl">
+              <FaComments />
+              <span>Falar com Especialista</span>
+            </button>
+          </div>
+
+          <div className="hero-features">
+            <div className="feature-item">
+              <FaCheckCircle className="feature-icon" />
+              <span>Sem custo de implantação</span>
+            </div>
+            <div className="feature-item">
+              <FaCheckCircle className="feature-icon" />
+              <span>Integração em 24 horas</span>
+            </div>
+            <div className="feature-item">
+              <FaCheckCircle className="feature-icon" />
+              <span>Garantia de resultados</span>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          className="hero-right animate-on-scroll"
+          style={{ y: useTransform(scrollY, [0, 1000], [0, 300]), opacity }}
+        >
+          <div className="logo-container">
+            <div className="logo-glow" />
+            <img src={logoBanner} alt="Transita.IA Logo" className="logo-image" />
+          </div>
+        </motion.div>
+      </div>
+
+      <motion.div 
+        className="scroll-indicator"
+        style={{ opacity: useTransform(scrollY, [0, 200], [1, 0]) }}
+      >
+        <div className="scroll-line">
+          <div className="scroll-dot" />
         </div>
-        <div className="scroll-hint">
-          <FaChevronDown className="bounce" />
+        <span className="scroll-text">Role para explorar</span>
+      </motion.div>
+    </div>
+  );
+};
+
+// Greeting banner: mostra Bom dia/Boa tarde/Boa noite + nome da empresa/usuário
+const GreetingBanner = ({ fallbackName = 'Transita.IA' }) => {
+  const getHour = () => new Date().getHours();
+  const hour = getHour();
+  let greeting = 'Olá';
+  if (hour >= 5 && hour < 12) greeting = 'Bom dia';
+  else if (hour >= 12 && hour < 18) greeting = 'Boa tarde';
+  else greeting = 'Boa noite';
+
+  // tenta obter nome do usuário logado em várias fontes
+  let name = fallbackName;
+  try {
+    if (window && window.__TRANSTA_USER && window.__TRANSTA_USER.name) name = window.__TRANSTA_USER.name;
+    else if (localStorage) {
+      const stored = localStorage.getItem('transita_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.name) name = parsed.name;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return (
+    <div className="greeting-banner">
+      <div className="greeting-content container">
+        <div className="greeting-text">
+          <h3>{greeting}, <span className="greeting-name">{name}</span> 👋</h3>
+          <p className="greeting-sub">Aqui estão as métricas e insights atualizados para sua operação.</p>
         </div>
       </div>
     </div>
@@ -502,2106 +467,467 @@ const VideoHero = () => {
 };
 
 // ==========================================================================
-// NOVOS COMPONENTES ADICIONADOS
+// DASHBOARD COM GRÁFICOS REAIS
 // ==========================================================================
 
-// Componente Mini Demo Interativa
-const InteractiveDemo = () => {
-  const [activeDemo, setActiveDemo] = useState('route');
-  const [simulationRunning, setSimulationRunning] = useState(true);
-  const [savings, setSavings] = useState(28470);
-  const [alerts, setAlerts] = useState(3);
-  const [optimization, setOptimization] = useState(87);
-  const intervalRef = useRef(null);
+const DashboardInteligente = () => {
+  const [timeRange, setTimeRange] = useState('week');
+  const [selectedMetric, setSelectedMetric] = useState('efficiency');
+  const [isLive, setIsLive] = useState(true);
+  const [selectedChart, setSelectedChart] = useState(null);
 
-  const demos = [
-    {
-      id: 'route',
-      title: 'Otimização de Rotas',
-      icon: <TbRoute />,
-      description: 'Veja como a IA encontra a rota mais eficiente em tempo real',
-      metrics: {
-        distance: '245 km',
-        time: '3h 45m',
-        savings: '18%',
-        fuel: '42L'
-      },
-      color: 'blue'
-    },
-    {
-      id: 'fine',
-      title: 'Gestão de Multas',
-      icon: <FaBell />,
-      description: 'Sistema automático de identificação e contestação de multas',
-      metrics: {
-        detected: '7 multas',
-        contested: '5 contestações',
-        saved: 'R$ 2.850',
-        time: '24h'
-      },
-      color: 'orange'
-    },
-    {
-      id: 'savings',
-      title: 'Economia em Tempo Real',
-      icon: <FaChartLine />,
-      description: 'Monitoramento contínuo de redução de custos',
-      metrics: {
-        monthly: 'R$ 28.470',
-        daily: 'R$ 949',
-        vehicles: '24 ativos',
-        roi: '320%'
-      },
-      color: 'green'
-    },
-    {
-      id: 'maintenance',
-      title: 'Manutenção Preditiva',
-      icon: <FaWrench />,
-      description: 'Antecipação de falhas e otimização de manutenções',
-      metrics: {
-        predicted: '3 alertas',
-        downtime: '-45%',
-        cost: '-30%',
-        lifespan: '+20%'
-      },
-      color: 'purple'
-    }
-  ];
+  // Dados para Gráfico de Dispersão 1 - Eficiência vs Consumo
+  const scatterData1 = {
+    datasets: [{
+      label: 'Eficiência vs Consumo',
+      data: [
+        { x: 65, y: 85 }, { x: 78, y: 72 }, { x: 82, y: 68 }, { x: 75, y: 80 },
+        { x: 90, y: 65 }, { x: 88, y: 70 }, { x: 95, y: 60 }, { x: 70, y: 90 },
+        { x: 85, y: 75 }, { x: 92, y: 55 }, { x: 80, y: 78 }, { x: 88, y: 62 }
+      ],
+      backgroundColor: 'rgba(51, 133, 255, 0.6)',
+      borderColor: 'var(--blue-400)',
+      borderWidth: 1
+    }]
+  };
 
-  const activeDemoData = demos.find(d => d.id === activeDemo);
-
-  useEffect(() => {
-    if (simulationRunning) {
-      intervalRef.current = setInterval(() => {
-        setSavings(prev => prev + Math.floor(Math.random() * 100));
-        setOptimization(prev => Math.min(99, prev + Math.random() * 0.5));
-        if (Math.random() > 0.8) {
-          setAlerts(prev => Math.max(0, prev - 1));
+  const scatterOptions1 = {
+    responsive: true,
+    plugins: {
+      legend: { display: true },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `Eficiência: ${context.parsed.x}%, Consumo: ${context.parsed.y}%`;
+          }
         }
-      }, 2000);
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Eficiência (%)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'var(--text-muted)' }
+      },
+      y: {
+        title: { display: true, text: 'Consumo (%)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'var(--text-muted)' }
+      }
     }
+  };
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+  // Dados para Gráfico de Dispersão 2 - Distância vs Tempo
+  const scatterData2 = {
+    datasets: [{
+      label: 'Distância vs Tempo',
+      data: [
+        { x: 150, y: 2.5 }, { x: 200, y: 3.2 }, { x: 180, y: 2.8 }, { x: 220, y: 3.5 },
+        { x: 170, y: 2.9 }, { x: 190, y: 3.1 }, { x: 210, y: 3.3 }, { x: 160, y: 2.7 },
+        { x: 230, y: 3.7 }, { x: 140, y: 2.3 }, { x: 195, y: 3.0 }, { x: 175, y: 2.6 }
+      ],
+      backgroundColor: 'rgba(255, 133, 51, 0.6)',
+      borderColor: 'var(--orange-400)',
+      borderWidth: 1
+    }]
+  };
+
+  const scatterOptions2 = {
+    responsive: true,
+    plugins: {
+      legend: { display: true },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `Distância: ${context.parsed.x}km, Tempo: ${context.parsed.y}h`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Distância (km)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'var(--text-muted)' }
+      },
+      y: {
+        title: { display: true, text: 'Tempo (horas)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'var(--text-muted)' }
+      }
+    }
+  };
+
+  // Dados para Gráfico de Barras
+  const barData = {
+    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+    datasets: [
+      {
+        label: 'Economia (R$ mil)',
+        data: [15, 22, 28, 35, 42, 48],
+        backgroundColor: 'rgba(51, 133, 255, 0.6)',
+        borderColor: 'var(--blue-400)',
+        borderWidth: 1
+      },
+      {
+        label: 'Redução de Custos (%)',
+        data: [12, 19, 25, 28, 32, 36],
+        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+        borderColor: 'var(--green-400)',
+        borderWidth: 1
+      }
+    ]
+  };
+
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+      y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+    }
+  };
+
+  // Dados para Gráfico de Linhas
+  const lineData = {
+    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+    datasets: [
+      {
+        label: 'Eficiência',
+        data: [65, 78, 82, 75, 90, 88, 95],
+        borderColor: 'var(--blue-400)',
+        backgroundColor: 'rgba(51, 133, 255, 0.1)',
+        tension: 0.4,
+        fill: true
+      },
+      {
+        label: 'Consumo',
+        data: [85, 72, 68, 80, 65, 70, 60],
+        borderColor: 'var(--orange-400)',
+        backgroundColor: 'rgba(255, 133, 51, 0.1)',
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  };
+
+  const lineOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        backgroundColor: 'var(--black-800)',
+        titleColor: 'var(--text-primary)',
+        bodyColor: 'var(--text-secondary)',
+        borderColor: 'var(--blue-500)',
+        borderWidth: 1,
+        cornerRadius: 8
+      }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: 'var(--text-muted)' } },
+      y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: 'var(--text-muted)' } }
+    }
+  };
+
+  // Dados para Gráfico de Donuts
+  // Resolver cor do fundo do cartão em runtime para passar um valor válido ao canvas
+  const _bgCard = (typeof window !== 'undefined')
+    ? getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim() || '#FFFFFF'
+    : '#FFFFFF';
+
+  const donutData = {
+    labels: ['Combustível', 'Manutenção', 'Multas', 'Pedágios', 'Outros'],
+    datasets: [{
+      data: [45, 25, 15, 10, 5],
+      backgroundColor: [
+        getComputedStyle(document.documentElement).getPropertyValue('--blue-400').trim() || '#3B82F6',
+        getComputedStyle(document.documentElement).getPropertyValue('--green-400').trim() || '#10B981',
+        getComputedStyle(document.documentElement).getPropertyValue('--orange-400').trim() || '#F97316',
+        getComputedStyle(document.documentElement).getPropertyValue('--purple-400').trim() || '#8B5CF6',
+        getComputedStyle(document.documentElement).getPropertyValue('--yellow-400').trim() || '#F59E0B'
+      ],
+      borderColor: _bgCard,
+      borderWidth: 2
+    }]
+  };
+
+  // Opções específicas para o Doughnut (evitar círculo escuro no centro)
+  const donutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true }
+    }
+  };
+
+  // Opções expandidas para os gráficos (para o modal)
+  const scatterOptions1Expanded = {
+    ...scatterOptions1,
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      ...scatterOptions1.plugins,
+      legend: { display: true, position: 'top' }
+    }
+  };
+
+  const scatterOptions2Expanded = {
+    ...scatterOptions2,
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      ...scatterOptions2.plugins,
+      legend: { display: true, position: 'top' }
+    }
+  };
+
+  const barOptionsExpanded = {
+    ...barOptions,
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      ...barOptions.plugins,
+      legend: { display: true, position: 'top' }
+    }
+  };
+
+  const lineOptionsExpanded = {
+    ...lineOptions,
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      ...lineOptions.plugins,
+      legend: { display: true, position: 'top' }
+    }
+  };
+
+  // Componente Modal para Gráfico Expandido
+  const ChartModal = ({ chart, onClose }) => {
+    if (!chart) return null;
+
+    const getChartComponent = () => {
+      switch (chart.type) {
+        case 'scatter1':
+          return <Scatter data={scatterData1} options={scatterOptions1Expanded} />;
+        case 'scatter2':
+          return <Scatter data={scatterData2} options={scatterOptions2Expanded} />;
+        case 'bar':
+          return <Bar data={barData} options={barOptionsExpanded} />;
+        case 'line':
+          return <Line data={lineData} options={lineOptionsExpanded} />;
+        case 'donut':
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+              <div style={{ width: '400px', height: '400px' }}>
+                <Doughnut data={donutData} options={donutOptions} />
+              </div>
+              <div className="cost-breakdown" style={{ flex: 1 }}>
+                {donutData.labels.map((label, index) => (
+                  <div key={index} className="cost-item">
+                    <div className="cost-label">
+                      <div 
+                        className="cost-color" 
+                        style={{ backgroundColor: donutData.datasets[0].backgroundColor[index] }}
+                      />
+                      <span>{label}</span>
+                    </div>
+                    <div className="cost-value">{donutData.datasets[0].data[index]}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        default:
+          return null;
       }
     };
-  }, [simulationRunning]);
 
-  const handleDemoClick = (demoId) => {
-    setActiveDemo(demoId);
-    // Reset animation
-    setSimulationRunning(false);
-    setTimeout(() => setSimulationRunning(true), 100);
+    return (
+      <div className="chart-modal-overlay" onClick={onClose}>
+        <div className="chart-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="chart-modal-header">
+            <h3>{chart.title}</h3>
+            <button className="chart-modal-close" onClick={onClose}>
+              <FaTimes />
+            </button>
+          </div>
+          <div className="chart-modal-body">
+            {getChartComponent()}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="interactive-demo-section">
-      <div className="demo-header">
-        <h2>Veja a IA em Ação</h2>
-        <p className="demo-subtitle">
-          Dashboard interativo que mostra resultados em tempo real
-        </p>
-        <div className="demo-controls">
-          <button 
-            className={`demo-control ${simulationRunning ? 'active' : ''}`}
-            onClick={() => setSimulationRunning(!simulationRunning)}
-          >
-            {simulationRunning ? <FaPause /> : <FaPlayCircle />}
-            <span>{simulationRunning ? 'Pausar' : 'Continuar'} Simulação</span>
-          </button>
-          <button className="demo-control">
-            <FaSyncAlt />
-            <span>Reiniciar</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="demo-container">
-        <div className="demo-selector">
-          {demos.map((demo) => (
-            <button
-              key={demo.id}
-              className={`demo-selector-btn ${activeDemo === demo.id ? 'active' : ''}`}
-              onClick={() => handleDemoClick(demo.id)}
-              data-color={demo.color}
-            >
-              <div className="selector-icon">{demo.icon}</div>
-              <span className="selector-title">{demo.title}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="demo-content">
-          <div className="demo-visualization">
-            <div className="visualization-header">
-              <h3>{activeDemoData.title}</h3>
-              <span className="demo-live-badge">
-                <div className="live-pulse" />
-                EM TEMPO REAL
-              </span>
-            </div>
-            
-            <div className={`demo-animation demo-${activeDemo}`}>
-              {/* Rota Otimizada */}
-              {activeDemo === 'route' && (
-                <div className="route-demo">
-                  <div className="route-map">
-                    <div className="route-point start">
-                      <FaMapMarkerAlt />
-                      <span>Origem</span>
-                    </div>
-                    <div className="route-point destination">
-                      <FaMapMarkerAlt />
-                      <span>Destino</span>
-                    </div>
-                    <div className="route-optimized">
-                      <div className="route-line" />
-                      <div className="route-vehicle">
-                        <FaTruck />
-                      </div>
-                    </div>
-                    <div className="route-traditional">
-                      <div className="route-line traditional" />
-                    </div>
-                    <div className="route-stats">
-                      <div className="route-stat">
-                        <div className="stat-label">Rota IA</div>
-                        <div className="stat-value">245 km</div>
-                      </div>
-                      <div className="route-stat">
-                        <div className="stat-label">Rota Tradicional</div>
-                        <div className="stat-value">298 km</div>
-                      </div>
-                      <div className="route-stat highlight">
-                        <div className="stat-label">Economia</div>
-                        <div className="stat-value">53 km</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Gestão de Multas */}
-              {activeDemo === 'fine' && (
-                <div className="fine-demo">
-                  <div className="fine-alerts">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="fine-alert">
-                        <div className="alert-icon">
-                          <MdWarning />
-                        </div>
-                        <div className="alert-content">
-                          <div className="alert-title">Multa Detectada</div>
-                          <div className="alert-details">
-                            Velocidade • R$ 195,23 • 5 pontos
-                          </div>
-                        </div>
-                        <div className="alert-status">
-                          <div className="status-badge contesting">
-                            <FaSync className="spinning" />
-                            Contestando
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="fine-stats">
-                    <div className="fine-stat">
-                      <div className="stat-value">R$ 2.850</div>
-                      <div className="stat-label">Economia Mensal</div>
-                    </div>
-                    <div className="fine-stat">
-                      <div className="stat-value">86%</div>
-                      <div className="stat-label">Taxa de Sucesso</div>
-                    </div>
-                    <div className="fine-stat">
-                      <div className="stat-value">24h</div>
-                      <div className="stat-label">Tempo Médio</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Economia em Tempo Real */}
-              {activeDemo === 'savings' && (
-                <div className="savings-demo">
-                  <div className="savings-counter">
-                    <div className="counter-label">Economia Total</div>
-                    <div className="counter-value">
-                      R$ <span className="animated-value">{savings.toLocaleString()}</span>
-                    </div>
-                    <div className="counter-trend">
-                      <FaArrowUp />
-                      <span>+R$ 949 hoje</span>
-                    </div>
-                  </div>
-                  <div className="savings-chart">
-                    <div className="chart-bars">
-                      {[65, 80, 45, 90, 70, 85, 95].map((height, i) => (
-                        <div key={i} className="chart-bar">
-                          <div 
-                            className="bar-fill" 
-                            style={{ height: `${height}%` }}
-                          />
-                          <div className="bar-label">Dia {i + 1}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Manutenção Preditiva */}
-              {activeDemo === 'maintenance' && (
-                <div className="maintenance-demo">
-                  <div className="maintenance-grid">
-                    <div className="vehicle-status">
-                      <div className="vehicle-icon">
-                        <FaTruck />
-                      </div>
-                      <div className="vehicle-info">
-                        <div className="vehicle-name">Caminhão BA-2022</div>
-                        <div className="vehicle-health">
-                          <div className="health-bar">
-                            <div 
-                              className="health-fill" 
-                              style={{ width: '78%' }}
-                            />
-                          </div>
-                          <span className="health-value">78%</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="maintenance-alerts">
-                      <div className="alert critical">
-                        <div className="alert-icon">
-                          <FaExclamationTriangle />
-                        </div>
-                        <div className="alert-content">
-                          <div className="alert-title">Freios</div>
-                          <div className="alert-desc">Troca recomendada em 15 dias</div>
-                        </div>
-                      </div>
-                      <div className="alert warning">
-                        <div className="alert-icon">
-                          <MdWarning />
-                        </div>
-                        <div className="alert-content">
-                          <div className="alert-title">Pneus</div>
-                          <div className="alert-desc">Verificar em 30 dias</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="demo-metrics">
-            <div className="metrics-grid">
-              {Object.entries(activeDemoData.metrics).map(([key, value]) => (
-                <div key={key} className="demo-metric">
-                  <div className="metric-value">{value}</div>
-                  <div className="metric-label">
-                    {key === 'distance' && 'Distância'}
-                    {key === 'time' && 'Tempo'}
-                    {key === 'savings' && 'Economia'}
-                    {key === 'fuel' && 'Combustível'}
-                    {key === 'detected' && 'Multas Detectadas'}
-                    {key === 'contested' && 'Contestações'}
-                    {key === 'saved' && 'Valor Salvo'}
-                    {key === 'monthly' && 'Mensal'}
-                    {key === 'daily' && 'Diário'}
-                    {key === 'vehicles' && 'Veículos'}
-                    {key === 'roi' && 'ROI'}
-                    {key === 'predicted' && 'Alertas Preditivos'}
-                    {key === 'downtime' && 'Redução Downtime'}
-                    {key === 'cost' && 'Redução Custos'}
-                    {key === 'lifespan' && 'Vida Útil'}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="demo-insight">
-              <div className="insight-icon">
-                <GiArtificialIntelligence />
-              </div>
-              <div className="insight-content">
-                <h4>Insight da IA</h4>
-                <p>
-                  {activeDemo === 'route' && 'Rota otimizada economiza 18% de combustível e reduz o tempo de entrega em 25%.'}
-                  {activeDemo === 'fine' && 'Sistema prevê economia de R$ 34.200/ano com gestão automática de multas.'}
-                  {activeDemo === 'savings' && 'Projeção indica economia acumulada de R$ 341.640 nos próximos 12 meses.'}
-                  {activeDemo === 'maintenance' && 'Manutenção preditiva reduz custos em 30% e aumenta disponibilidade da frota.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente Prova Social REAL
-const SocialProof = () => {
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [trustMetrics, setTrustMetrics] = useState({
-    clients: 524,
-    satisfaction: 98.7,
-    years: 5,
-    retention: 96
-  });
-
-  const testimonials = [
-    {
-      quote: "Reduzimos 32% dos custos operacionais em apenas 3 meses. A IA identificou rotas 40% mais eficientes.",
-      author: "Carlos Lima",
-      role: "Diretor Logístico",
-      company: "Transportes Express",
-      logo: "TE",
-      metrics: { savings: "32%", time: "3 meses", efficiency: "40%" }
-    },
-    {
-      quote: "O sistema de multas automatizado nos economizou R$ 85.000 no último ano. Simplesmente impressionante.",
-      author: "Ana Santos",
-      role: "Gerente de Frota",
-      company: "Logística Brasil",
-      logo: "LB",
-      metrics: { savings: "R$ 85.000", period: "1 ano", automation: "100%" }
-    },
-    {
-      quote: "A manutenção preditiva reduziu nosso downtime em 45%. Agora operamos com 99% de disponibilidade.",
-      author: "Roberto Almeida",
-      role: "COO",
-      company: "Cargo Solutions",
-      logo: "CS",
-      metrics: { downtime: "-45%", availability: "99%", efficiency: "+35%" }
-    },
-    {
-      quote: "Implementamos em toda frota de 200+ veículos. ROI de 320% no primeiro ano. Melhor decisão.",
-      author: "Mariana Costa",
-      role: "Head de Operações",
-      company: "Global Logistics",
-      logo: "GL",
-      metrics: { vehicles: "200+", roi: "320%", period: "1 ano" }
-    }
-  ];
-
-  const companies = [
-    { name: "AMBEV", logo: "AMBEV", industry: "Bebidas" },
-    { name: "VALE", logo: "VALE", industry: "Mineração" },
-    { name: "AMAZON", logo: "AMZN", industry: "E-commerce" },
-    { name: "MERCEDES-BENZ", logo: "MB", industry: "Automotivo" },
-    { name: "NESTLÉ", logo: "NEST", industry: "Alimentos" },
-    { name: "UNILEVER", logo: "ULVR", industry: "Consumer Goods" },
-    { name: "BRF", logo: "BRF", industry: "Alimentos" },
-    { name: "JBS", logo: "JBS", industry: "Alimentos" }
-  ];
-
-  return (
-    <div className="social-proof-section">
-      <div className="section-header">
-        <PremiumBadge text="QUEM USA, APROVA" color="orange" />
-        <h2 className="section-title">
-          Confiança de <span className="gradient-text">Quem Decide</span>
-        </h2>
-        <p className="section-description">
-          Empresas líderes que transformaram suas operações logísticas com a Transita.AI
-        </p>
-      </div>
-
-      <div className="trust-metrics">
-        <div className="trust-metric">
-          <div className="metric-value">
-            <AnimatedCounter value={trustMetrics.clients} suffix="+" />
-          </div>
-          <div className="metric-label">Empresas Atendidas</div>
-        </div>
-        <div className="trust-metric">
-          <div className="metric-value">
-            <AnimatedCounter value={trustMetrics.satisfaction} suffix="%" decimals={1} />
-          </div>
-          <div className="metric-label">Satisfação</div>
-        </div>
-        <div className="trust-metric">
-          <div className="metric-value">
-            {trustMetrics.years}+
-          </div>
-          <div className="metric-label">Anos no Mercado</div>
-        </div>
-        <div className="trust-metric">
-          <div className="metric-value">
-            <AnimatedCounter value={trustMetrics.retention} suffix="%" />
-          </div>
-          <div className="metric-label">Retenção de Clientes</div>
-        </div>
-      </div>
-
-      <div className="companies-logos">
-        <h3 className="logos-title">Confiado por líderes do mercado</h3>
-        <div className="logos-grid">
-          {companies.map((company, index) => (
-            <div key={index} className="company-logo">
-              <div className="logo-container">
-                <div className="logo-text">{company.logo}</div>
-              </div>
-              <div className="company-info">
-                <div className="company-name">{company.name}</div>
-                <div className="company-industry">{company.industry}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="testimonials-section">
-        <div className="testimonials-header">
-          <h3>Depoimentos Reais</h3>
-          <div className="testimonials-nav">
-            <button 
-              className="nav-btn"
-              onClick={() => setActiveTestimonial(prev => Math.max(0, prev - 1))}
-            >
-              <FaChevronLeft />
-            </button>
-            <div className="testimonial-indicators">
-              {testimonials.map((_, idx) => (
-                <button
-                  key={idx}
-                  className={`indicator ${activeTestimonial === idx ? 'active' : ''}`}
-                  onClick={() => setActiveTestimonial(idx)}
-                />
-              ))}
-            </div>
-            <button 
-              className="nav-btn"
-              onClick={() => setActiveTestimonial(prev => Math.min(testimonials.length - 1, prev + 1))}
-            >
-              <FaChevronRight />
-            </button>
-          </div>
-        </div>
-
-        <div className="testimonials-container">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={index}
-              className={`testimonial-card ${activeTestimonial === index ? 'active' : ''}`}
-              style={{ transform: `translateX(${(index - activeTestimonial) * 100}%)` }}
-            >
-              <div className="testimonial-content">
-                <div className="quote-icon">"</div>
-                <p className="testimonial-quote">{testimonial.quote}</p>
-                
-                <div className="testimonial-metrics">
-                  {Object.entries(testimonial.metrics).map(([key, value]) => (
-                    <div key={key} className="testimonial-metric">
-                      <div className="metric-value">{value}</div>
-                      <div className="metric-label">
-                        {key === 'savings' && 'Redução de Custos'}
-                        {key === 'time' && 'Tempo'}
-                        {key === 'efficiency' && 'Eficiência'}
-                        {key === 'period' && 'Período'}
-                        {key === 'automation' && 'Automação'}
-                        {key === 'downtime' && 'Menos Downtime'}
-                        {key === 'availability' && 'Disponibilidade'}
-                        {key === 'vehicles' && 'Veículos'}
-                        {key === 'roi' && 'ROI'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="testimonial-author">
-                  <div className="author-avatar">
-                    {testimonial.logo}
-                  </div>
-                  <div className="author-info">
-                    <div className="author-name">{testimonial.author}</div>
-                    <div className="author-role">{testimonial.role}</div>
-                    <div className="author-company">{testimonial.company}</div>
-                  </div>
-                  <div className="author-verification">
-                    <MdVerifiedUser />
-                    <span>Verificado</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente Antes vs Depois
-const BeforeAfterComparison = () => {
-  const [activeTab, setActiveTab] = useState('before');
-
-  const comparisons = [
-    {
-      category: 'Gestão',
-      before: {
-        title: 'Planilhas Manuais',
-        icon: <FaRegClock />,
-        painPoints: ['Erros frequentes', 'Atualização lenta', 'Sem visão em tempo real'],
-        color: 'red'
-      },
-      after: {
-        title: 'IA em Tempo Real',
-        icon: <FaRobot />,
-        benefits: ['Decisões automáticas', 'Atualização instantânea', 'Dashboard 24/7'],
-        color: 'green'
-      }
-    },
-    {
-      category: 'Multas',
-      before: {
-        title: 'Processo Manual',
-        icon: <FaExclamationTriangle />,
-        painPoints: ['Multas perdidas', 'Prazos vencidos', 'Custos altos'],
-        color: 'red'
-      },
-      after: {
-        title: 'Automação Inteligente',
-        icon: <FaBell />,
-        benefits: ['Detecção automática', 'Contestações otimizadas', 'Economia garantida'],
-        color: 'green'
-      }
-    },
-    {
-      category: 'Manutenção',
-      before: {
-        title: 'Corretiva (Reativa)',
-        icon: <FaWrench />,
-        painPoints: ['Paradas inesperadas', 'Custos imprevistos', 'Baixa disponibilidade'],
-        color: 'red'
-      },
-      after: {
-        title: 'Preditiva (Proativa)',
-        icon: <FaChartLine />,
-        benefits: ['Antecipação de falhas', 'Custos otimizados', 'Alta disponibilidade'],
-        color: 'green'
-      }
-    },
-    {
-      category: 'Financeiro',
-      before: {
-        title: 'Controle Básico',
-        icon: <FaDollarSign />,
-        painPoints: ['Custos ocultos', 'ROI incerto', 'Sem previsibilidade'],
-        color: 'red'
-      },
-      after: {
-        title: 'Analytics Avançado',
-        icon: <MdAnalytics />,
-        benefits: ['Custos transparentes', 'ROI mensurável', 'Previsões precisas'],
-        color: 'green'
-      }
-    }
-  ];
-
-  return (
-    <div className="before-after-section">
-      <div className="section-header">
-        <PremiumBadge text="TRANSFORMAÇÃO REAL" color="purple" />
-        <h2 className="section-title">
-          Antes vs <span className="gradient-text">Depois da IA</span>
-        </h2>
-        <p className="section-description">
-          Veja como empresas estão transformando desafios em resultados extraordinários
-        </p>
-      </div>
-
-      <div className="comparison-tabs">
-        <button 
-          className={`comparison-tab ${activeTab === 'before' ? 'active' : ''}`}
-          onClick={() => setActiveTab('before')}
-        >
-          <FaEyeSlash />
-          <span>Sem Transita.AI</span>
-        </button>
-        <div className="tab-divider">
-          <MdCompareArrows />
-        </div>
-        <button 
-          className={`comparison-tab ${activeTab === 'after' ? 'active' : ''}`}
-          onClick={() => setActiveTab('after')}
-        >
-          <FaEye />
-          <span>Com Transita.AI</span>
-        </button>
-      </div>
-
-      <div className="comparison-grid">
-        {comparisons.map((comparison, index) => (
-          <div key={index} className="comparison-card">
-            <div className="comparison-category">
-              <div className="category-icon">
-                {activeTab === 'before' ? comparison.before.icon : comparison.after.icon}
-              </div>
-              <h3>{comparison.category}</h3>
-            </div>
-
-            <div className="comparison-content">
-              <div className="comparison-state">
-                <h4 className={`state-title ${activeTab === 'before' ? 'negative' : 'positive'}`}>
-                  {activeTab === 'before' ? comparison.before.title : comparison.after.title}
-                </h4>
-                
-                <div className="state-details">
-                  {activeTab === 'before' ? (
-                    <div className="pain-points">
-                      {comparison.before.painPoints.map((point, i) => (
-                        <div key={i} className="pain-point">
-                          <div className="point-icon">
-                            <MdWarning />
-                          </div>
-                          <span>{point}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="benefits">
-                      {comparison.after.benefits.map((benefit, i) => (
-                        <div key={i} className="benefit">
-                          <div className="benefit-icon">
-                            <MdCheckCircle />
-                          </div>
-                          <span>{benefit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={`state-metrics ${activeTab === 'before' ? 'negative' : 'positive'}`}>
-                  {activeTab === 'before' ? (
-                    <div className="metric negative">
-                      <FaArrowDown />
-                      <span>Prejuízo</span>
-                    </div>
-                  ) : (
-                    <div className="metric positive">
-                      <FaArrowUp />
-                      <span>Lucro</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="comparison-visual">
-                <div className="visual-container">
-                  {activeTab === 'before' ? (
-                    <div className="visual-before">
-                      <div className="chart-negative">
-                        {[30, 45, 25, 60, 35].map((height, i) => (
-                          <div key={i} className="bar" style={{ height: `${height}%` }} />
-                        ))}
-                      </div>
-                      <div className="visual-label">Ineficiência</div>
-                    </div>
-                  ) : (
-                    <div className="visual-after">
-                      <div className="chart-positive">
-                        {[85, 90, 88, 92, 95].map((height, i) => (
-                          <div key={i} className="bar" style={{ height: `${height}%` }} />
-                        ))}
-                      </div>
-                      <div className="visual-label">Eficiência</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="comparison-impact">
-              <div className="impact-value">
-                {activeTab === 'before' ? '-32%' : '+68%'}
-              </div>
-              <div className="impact-label">
-                {activeTab === 'before' ? 'Perda de Eficiência' : 'Ganho de Eficiência'}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="transformation-summary">
-        <div className="summary-card">
-          <h3>Resultado da Transformação</h3>
-          <div className="summary-metrics">
-            <div className="summary-metric">
-              <div className="metric-value">45%</div>
-              <div className="metric-label">Redução de Custos</div>
-            </div>
-            <div className="summary-metric">
-              <div className="metric-value">67%</div>
-              <div className="metric-label">Aumento de Eficiência</div>
-            </div>
-            <div className="summary-metric">
-              <div className="metric-value">320%</div>
-              <div className="metric-label">ROI Médio</div>
-            </div>
-            <div className="summary-metric">
-              <div className="metric-value">98%</div>
-              <div className="metric-label">Satisfação</div>
-            </div>
-          </div>
-          <p className="summary-note">
-            *Baseado em dados reais de clientes nos últimos 12 meses
+    <div className="dashboard-container">
+      <div className="dashboard-header">
+        <div className="dashboard-title">
+          <h2>Gráficos Essenciais</h2>
+          <p className="dashboard-subtitle">
+            Análise completa dos dados da frota com visualizações avançadas
           </p>
         </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente Como Funciona em 3 Passos
-const HowItWorks = () => {
-  const [activeStep, setActiveStep] = useState(0);
-
-  const steps = [
-    {
-      number: 1,
-      title: "Conecte sua Frota",
-      icon: <FaPlug />,
-      description: "Integração rápida com qualquer sistema ou hardware. Comece em minutos.",
-      details: [
-        "Integração API em 24h",
-        "Sem necessidade de hardware adicional",
-        "Compatible com todos os sistemas"
-      ],
-      color: "blue",
-      duration: "2 dias"
-    },
-    {
-      number: 2,
-      title: "A IA Analisa Tudo",
-      icon: <FaRobot />,
-      description: "Nossa inteligência artificial processa dados em tempo real e gera insights.",
-      details: [
-        "Análise preditiva 24/7",
-        "Alertas inteligentes",
-        "Otimização automática"
-      ],
-      color: "purple",
-      duration: "Imediato"
-    },
-    {
-      number: 3,
-      title: "Você Lucra Mais",
-      icon: <FaChartLine />,
-      description: "Tome decisões baseadas em dados e veja os resultados financeiros.",
-      details: [
-        "ROI visível em 30 dias",
-        "Redução de custos garantida",
-        "Escalabilidade automática"
-      ],
-      color: "green",
-      duration: "30 dias"
-    }
-  ];
-
-  return (
-    <div className="how-it-works-section">
-      <div className="section-header">
-        <PremiumBadge text="SIMPLES E PODEROSO" color="blue" />
-        <h2 className="section-title">
-          Como Funciona em <span className="gradient-text">3 Passos</span>
-        </h2>
-        <p className="section-description">
-          Implementação rápida, resultados imediatos. Foco no que importa: seu lucro.
-        </p>
-      </div>
-
-      <div className="steps-container">
-        <div className="steps-progress">
-          <div className="progress-line">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
-            />
-          </div>
-          
-          <div className="steps-indicators">
-            {steps.map((step, index) => (
-              <button
-                key={index}
-                className={`step-indicator ${activeStep === index ? 'active' : ''}`}
-                onClick={() => setActiveStep(index)}
-                data-color={step.color}
-              >
-                <div className="indicator-number">{step.number}</div>
-                <div className="indicator-dot" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="steps-content">
-          {steps.map((step, index) => (
-            <div 
-              key={index}
-              className={`step-card ${activeStep === index ? 'active' : ''}`}
-              style={{ display: activeStep === index ? 'block' : 'none' }}
+        
+        <div className="dashboard-controls">
+          <div className="listbox-container">
+            <select 
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="listbox-button"
             >
-              <div className="step-header">
-                <div className="step-icon" style={{ background: `var(--${step.color}-500)` }}>
-                  {step.icon}
-                </div>
-                <div className="step-titles">
-                  <div className="step-number">Passo {step.number}</div>
-                  <h3 className="step-title">{step.title}</h3>
-                  <div className="step-duration">
-                    <FaClock />
-                    <span>{step.duration}</span>
-                  </div>
-                </div>
-              </div>
-
-              <p className="step-description">{step.description}</p>
-
-              <div className="step-details">
-                {step.details.map((detail, i) => (
-                  <div key={i} className="step-detail">
-                    <div className="detail-check">
-                      <FaCheckCircle />
-                    </div>
-                    <span>{detail}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="step-visual">
-                <div className={`visual-animation step-${step.number}`}>
-                  {step.number === 1 && (
-                    <div className="connection-animation">
-                      <div className="device">
-                        <FaTruck />
-                        <span>Veículo</span>
-                      </div>
-                      <div className="connection-line">
-                        <div className="data-flow" />
-                      </div>
-                      <div className="device">
-                        <FaCloud />
-                        <span>Plataforma</span>
-                      </div>
-                    </div>
-                  )}
-                  {step.number === 2 && (
-                    <div className="analysis-animation">
-                      <div className="ai-brain">
-                        <FaRobot />
-                      </div>
-                      <div className="data-points">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} className="data-point" />
-                        ))}
-                      </div>
-                      <div className="insights">
-                        <div className="insight">📈 +45%</div>
-                        <div className="insight">💰 R$ 28K</div>
-                        <div className="insight">⏱️ -3h</div>
-                      </div>
-                    </div>
-                  )}
-                  {step.number === 3 && (
-                    <div className="results-animation">
-                      <div className="profit-chart">
-                        <div className="chart-growth">
-                          {[30, 45, 65, 85, 95].map((height, i) => (
-                            <div key={i} className="growth-bar" style={{ height: `${height}%` }} />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="profit-metrics">
-                        <div className="profit-metric">
-                          <div className="metric-value">R$ 28.470</div>
-                          <div className="metric-label">Economia Mensal</div>
-                        </div>
-                        <div className="profit-metric">
-                          <div className="metric-value">320%</div>
-                          <div className="metric-label">ROI</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="steps-navigation">
-          <button 
-            className="nav-btn"
-            onClick={() => setActiveStep(prev => Math.max(0, prev - 1))}
-            disabled={activeStep === 0}
-          >
-            <FaChevronLeft />
-            <span>Anterior</span>
-          </button>
-          
-          <div className="steps-counter">
-            <span className="current-step">{activeStep + 1}</span>
-            <span className="steps-total">/{steps.length}</span>
+              <option value="week">Semanal</option>
+              <option value="month">Mensal</option>
+              <option value="year">Anual</option>
+            </select>
           </div>
-          
+
           <button 
-            className="nav-btn"
-            onClick={() => setActiveStep(prev => Math.min(steps.length - 1, prev + 1))}
-            disabled={activeStep === steps.length - 1}
+            className={`transita-btn ${isLive ? 'transita-btn-primary' : 'transita-btn-secondary'}`}
+            onClick={() => setIsLive(!isLive)}
           >
-            <span>Próximo</span>
-            <FaChevronRight />
+            <div className={`live-indicator ${isLive ? 'live' : ''}`} />
+            <span>{isLive ? 'AO VIVO' : 'PAUSADO'}</span>
+          </button>
+
+          <button className="transita-btn transita-btn-secondary">
+            <FaSync />
+            <span>Atualizar</span>
+          </button>
+
+          <button className="transita-btn transita-btn-primary">
+            <FaChartLine />
+            <span>Exportar</span>
           </button>
         </div>
       </div>
 
-      <div className="implementation-timeline">
-        <h3>Timeline de Implementação</h3>
-        <div className="timeline-steps">
-          <div className="timeline-step">
-            <div className="timeline-dot" />
-            <div className="timeline-content">
-              <div className="timeline-title">Dia 1-2: Integração</div>
-              <div className="timeline-desc">Conectamos sua frota</div>
+      <div className="dashboard-grid">
+        {/* Gráfico de Dispersão 1 */}
+        <div 
+          className="dashboard-card clickable"
+          onClick={() => setSelectedChart({ type: 'scatter1', title: 'Gráfico de Dispersão - Eficiência vs Consumo' })}
+        >
+          <div className="card-header">
+            <h3>Gráfico de Dispersão</h3>
+            <span className="card-period">Eficiência vs Consumo</span>
+            <div className="card-click-hint">
+              <FaExpandAlt />
+              <span>Clique para expandir</span>
             </div>
           </div>
-          <div className="timeline-step">
-            <div className="timeline-dot" />
-            <div className="timeline-content">
-              <div className="timeline-title">Dia 3-7: Análise</div>
-              <div className="timeline-desc">IA identifica oportunidades</div>
-            </div>
-          </div>
-          <div className="timeline-step">
-            <div className="timeline-dot" />
-            <div className="timeline-content">
-              <div className="timeline-title">Dia 8-30: Otimização</div>
-              <div className="timeline-desc">Resultados começam a aparecer</div>
-            </div>
-          </div>
-          <div className="timeline-step">
-            <div className="timeline-dot" />
-            <div className="timeline-content">
-              <div className="timeline-title">Mês 2+: Escala</div>
-              <div className="timeline-desc">Economia crescente</div>
+          <div className="card-content">
+            <div className="chart-wrapper">
+              <Scatter data={scatterData1} options={scatterOptions1} height={250} />
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
 
-// Componente ROI Calculator
-const ROICalculator = () => {
-  const [vehicles, setVehicles] = useState(10);
-  const [monthlyKm, setMonthlyKm] = useState(50000);
-  const [avgCost, setAvgCost] = useState(2.5);
-  const [efficiency, setEfficiency] = useState(25);
-
-  const calculateROI = () => {
-    const monthlyFuelCost = monthlyKm * avgCost;
-    const monthlySavings = monthlyFuelCost * (efficiency / 100);
-    const annualSavings = monthlySavings * 12;
-    const finesSavings = vehicles * 250; // Média de multas por veículo
-    const maintenanceSavings = vehicles * 500; // Manutenção preditiva
-    const totalMonthlySavings = monthlySavings + finesSavings + maintenanceSavings;
-    const totalAnnualSavings = totalMonthlySavings * 12;
-    
-    return {
-      monthlyFuelCost,
-      monthlySavings,
-      annualSavings,
-      finesSavings,
-      maintenanceSavings,
-      totalMonthlySavings,
-      totalAnnualSavings,
-      roiPercentage: Math.round((totalAnnualSavings / (vehicles * 200)) * 100) // Investimento estimado
-    };
-  };
-
-  const results = calculateROI();
-
-  return (
-    <div className="roi-calculator-section">
-      <div className="section-header">
-        <PremiumBadge text="CALCULADORA DE ROI" color="green" />
-        <h2 className="section-title">
-          Veja Quanto Você Pode <span className="gradient-text">Economizar</span>
-        </h2>
-        <p className="section-description">
-          Simule o retorno do investimento baseado na sua operação atual
-        </p>
-      </div>
-
-      <div className="calculator-container">
-        <div className="calculator-inputs">
-          <div className="input-group">
-            <label htmlFor="vehicles">
-              <FaTruck />
-              <span>Número de Veículos</span>
-            </label>
-            <div className="input-with-slider">
-              <input
-                type="range"
-                id="vehicles"
-                min="1"
-                max="100"
-                value={vehicles}
-                onChange={(e) => setVehicles(parseInt(e.target.value))}
-                className="slider"
-              />
-              <div className="slider-value">
-                <span>{vehicles}</span>
-                <div className="value-badge">veículos</div>
-              </div>
+        {/* Gráfico de Dispersão 2 */}
+        <div 
+          className="dashboard-card clickable"
+          onClick={() => setSelectedChart({ type: 'scatter2', title: 'Gráfico de Dispersão - Distância vs Tempo' })}
+        >
+          <div className="card-header">
+            <h3>Gráfico de Dispersão</h3>
+            <span className="card-period">Distância vs Tempo</span>
+            <div className="card-click-hint">
+              <FaExpandAlt />
+              <span>Clique para expandir</span>
             </div>
-            <div className="input-presets">
-              {[5, 10, 25, 50, 100].map(preset => (
-                <button
-                  key={preset}
-                  className={`preset-btn ${vehicles === preset ? 'active' : ''}`}
-                  onClick={() => setVehicles(preset)}
-                >
-                  {preset}
-                </button>
+          </div>
+          <div className="card-content">
+            <div className="chart-wrapper">
+              <Scatter data={scatterData2} options={scatterOptions2} height={250} />
+            </div>
+          </div>
+        </div>
+
+        {/* Gráfico de Barras */}
+        <div 
+          className="dashboard-card clickable"
+          onClick={() => setSelectedChart({ type: 'bar', title: 'Gráfico de Barras - Economia & Redução de Custos' })}
+        >
+          <div className="card-header">
+            <h3>Gráfico de Barras</h3>
+            <span className="card-period">Economia & Redução de Custos</span>
+            <div className="card-click-hint">
+              <FaExpandAlt />
+              <span>Clique para expandir</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <div className="chart-wrapper">
+              <Bar data={barData} options={barOptions} height={250} />
+            </div>
+          </div>
+        </div>
+
+        {/* Gráfico de Linhas */}
+        <div 
+          className="dashboard-card clickable"
+          onClick={() => setSelectedChart({ type: 'line', title: 'Gráfico de Linhas - Desempenho Semanal' })}
+        >
+          <div className="card-header">
+            <h3>Gráfico de Linhas</h3>
+            <span className="card-period">Desempenho Semanal</span>
+            <div className="card-click-hint">
+              <FaExpandAlt />
+              <span>Clique para expandir</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <div className="chart-wrapper">
+              <Line data={lineData} options={lineOptions} height={250} />
+            </div>
+          </div>
+        </div>
+
+        {/* Gráfico de Donuts */}
+        <div 
+          className="dashboard-card wide clickable"
+          onClick={() => setSelectedChart({ type: 'donut', title: 'Gráfico de Donuts - Distribuição de Custos' })}
+        >
+          <div className="card-header">
+            <h3>Gráfico de Donuts</h3>
+            <span className="card-period">Distribuição de Custos</span>
+            <div className="card-click-hint">
+              <FaExpandAlt />
+              <span>Clique para expandir</span>
+            </div>
+          </div>
+          <div className="card-content">
+            <div className="chart-container">
+              <Doughnut data={donutData} options={donutOptions} height={200} />
+            </div>
+            <div className="cost-breakdown">
+              {donutData.labels.map((label, index) => (
+                <div key={index} className="cost-item">
+                  <div className="cost-label">
+                    <div 
+                      className="cost-color" 
+                      style={{ backgroundColor: donutData.datasets[0].backgroundColor[index] }}
+                    />
+                    <span>{label}</span>
+                  </div>
+                  <div className="cost-value">{donutData.datasets[0].data[index]}%</div>
+                </div>
               ))}
             </div>
           </div>
-
-          <div className="input-group">
-            <label htmlFor="monthlyKm">
-              <GiPathDistance />
-              <span>Quilometragem Mensal Total</span>
-            </label>
-            <div className="input-with-slider">
-              <input
-                type="range"
-                id="monthlyKm"
-                min="1000"
-                max="500000"
-                step="1000"
-                value={monthlyKm}
-                onChange={(e) => setMonthlyKm(parseInt(e.target.value))}
-                className="slider"
-              />
-              <div className="slider-value">
-                <span>{monthlyKm.toLocaleString()}</span>
-                <div className="value-badge">km/mês</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="avgCost">
-              <FaGasPump />
-              <span>Custo Médio por Km</span>
-            </label>
-            <div className="input-with-slider">
-              <input
-                type="range"
-                id="avgCost"
-                min="1"
-                max="5"
-                step="0.1"
-                value={avgCost}
-                onChange={(e) => setAvgCost(parseFloat(e.target.value))}
-                className="slider"
-              />
-              <div className="slider-value">
-                <span>R$ {avgCost.toFixed(2)}</span>
-                <div className="value-badge">por km</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="efficiency">
-              <FaChartLine />
-              <span>Ganho de Eficiência Esperado</span>
-            </label>
-            <div className="input-with-slider">
-              <input
-                type="range"
-                id="efficiency"
-                min="15"
-                max="40"
-                value={efficiency}
-                onChange={(e) => setEfficiency(parseInt(e.target.value))}
-                className="slider"
-              />
-              <div className="slider-value">
-                <span>{efficiency}%</span>
-                <div className="value-badge">redução de custos</div>
-              </div>
-            </div>
-            <div className="efficiency-notes">
-              <div className="note">
-                <FaCheckCircle />
-                <span>Média dos clientes: 25-35%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="calculator-results">
-          <div className="results-header">
-            <h3>Seu Retorno Financeiro</h3>
-            <div className="results-badge">
-              <FaPercent />
-              <span>ROI {results.roiPercentage}%</span>
-            </div>
-          </div>
-
-          <div className="results-main">
-            <div className="main-result">
-              <div className="result-label">Economia Mensal Estimada</div>
-              <div className="result-value">
-                R$ {results.totalMonthlySavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </div>
-              <div className="result-trend">
-                <FaArrowUp />
-                <span>Recorrente todo mês</span>
-              </div>
-            </div>
-
-            <div className="results-breakdown">
-              <h4>Detalhamento da Economia</h4>
-              <div className="breakdown-items">
-                <div className="breakdown-item">
-                  <div className="item-label">
-                    <FaGasPump />
-                    <span>Combustível</span>
-                  </div>
-                  <div className="item-value">
-                    R$ {results.monthlySavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-                <div className="breakdown-item">
-                  <div className="item-label">
-                    <FaBell />
-                    <span>Multas</span>
-                  </div>
-                  <div className="item-value">
-                    R$ {results.finesSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-                <div className="breakdown-item">
-                  <div className="item-label">
-                    <FaWrench />
-                    <span>Manutenção</span>
-                  </div>
-                  <div className="item-value">
-                    R$ {results.maintenanceSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="annual-projection">
-              <div className="projection-header">
-                <h4>Projeção Anual</h4>
-                <div className="projection-badge">12 meses</div>
-              </div>
-              <div className="projection-value">
-                R$ {results.totalAnnualSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </div>
-              <div className="projection-chart">
-                {[30, 45, 65, 85, 95, 100].map((height, i) => (
-                  <div key={i} className="chart-column">
-                    <div 
-                      className="column-fill" 
-                      style={{ height: `${height}%` }}
-                    />
-                    <div className="column-label">Mês {i + 1}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="roi-summary">
-              <div className="roi-metric">
-                <div className="metric-value">{results.roiPercentage}%</div>
-                <div className="metric-label">Retorno sobre Investimento</div>
-              </div>
-              <div className="roi-metric">
-                <div className="metric-value">
-                  {Math.ceil(1000000 / results.totalAnnualSavings)} meses
-                </div>
-                <div className="metric-label">Payback</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="results-cta">
-            <button className="transita-btn transita-btn-primary transita-btn-xl">
-              <span>Quero Essa Economia</span>
-              <FaArrowUp />
-            </button>
-            <div className="results-guarantee">
-              <FaShieldAlt />
-              <span>Garantia de resultados em 90 dias ou seu dinheiro de volta</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente Segurança & Compliance
-const SecurityCompliance = () => {
-  const [activeSecurity, setActiveSecurity] = useState('lgpd');
-
-  const securityFeatures = [
-    {
-      id: 'lgpd',
-      title: 'LGPD Compliance',
-      icon: <AiFillSafetyCertificate />,
-      description: 'Total conformidade com a Lei Geral de Proteção de Dados',
-      features: [
-        'Anonimização de dados',
-        'Consentimento explícito',
-        'Relatórios de auditoria',
-        'DPO dedicado'
-      ],
-      certifications: ['LGPD', 'ISO 27001']
-    },
-    {
-      id: 'encryption',
-      title: 'Criptografia Avançada',
-      icon: <FaLock />,
-      description: 'Proteção de dados em trânsito e em repouso',
-      features: [
-        'AES-256 encryption',
-        'SSL/TLS 1.3',
-        'Chaves criptográficas próprias',
-        'Zero-knowledge architecture'
-      ],
-      certifications: ['FIPS 140-2', 'NIST']
-    },
-    {
-      id: 'sla',
-      title: 'SLA 99.9%',
-      icon: <FaShieldAlt />,
-      description: 'Disponibilidade garantida com compensação financeira',
-      features: [
-        '99.9% uptime garantido',
-        'Backup automático',
-        'Recuperação de desastres',
-        'Monitoramento 24/7'
-      ],
-      certifications: ['SLA 99.9%', 'ISO 22301']
-    },
-    {
-      id: 'backup',
-      title: 'Backup Automático',
-      icon: <FaCloud />,
-      description: 'Proteção contra perda de dados com recuperação instantânea',
-      features: [
-        'Backup em tempo real',
-        '3 cópias em locais diferentes',
-        'Recuperação em 15 minutos',
-        'Versionamento ilimitado'
-      ],
-      certifications: ['RPO 5min', 'RTO 15min']
-    }
-  ];
-
-  const complianceStandards = [
-    { name: 'ISO 27001', icon: <BsShieldCheck />, status: 'Certificado' },
-    { name: 'LGPD', icon: <AiFillSafetyCertificate />, status: 'Compliant' },
-    { name: 'SOC 2', icon: <TbShieldCheck />, status: 'Em auditoria' },
-    { name: 'NIST', icon: <MdSecurity />, status: 'Alinhado' },
-    { name: 'GDPR', icon: <FaShieldAlt />, status: 'Compliant' },
-    { name: 'HIPAA', icon: <IoShieldCheckmark />, status: 'Compatível' }
-  ];
-
-  return (
-    <div className="security-compliance-section">
-      <div className="section-header">
-        <PremiumBadge text="SEGURANÇA & COMPLIANCE" color="blue" />
-        <h2 className="section-title">
-          Segurança de <span className="gradient-text">Nível Empresarial</span>
-        </h2>
-        <p className="section-description">
-          Proteção de dados, conformidade regulatória e disponibilidade garantida para sua operação
-        </p>
-      </div>
-
-      <div className="compliance-standards">
-        <h3>Padrões e Certificações</h3>
-        <div className="standards-grid">
-          {complianceStandards.map((standard, index) => (
-            <div key={index} className="standard-card">
-              <div className="standard-icon">{standard.icon}</div>
-              <div className="standard-name">{standard.name}</div>
-              <div className={`standard-status ${standard.status.toLowerCase()}`}>
-                {standard.status}
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      <div className="security-features">
-        <div className="security-selector">
-          {securityFeatures.map((feature) => (
-            <button
-              key={feature.id}
-              className={`security-tab ${activeSecurity === feature.id ? 'active' : ''}`}
-              onClick={() => setActiveSecurity(feature.id)}
-            >
-              <div className="tab-icon">{feature.icon}</div>
-              <span className="tab-title">{feature.title}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="security-content">
-          {securityFeatures.map((feature) => (
-            <div 
-              key={feature.id}
-              className={`security-detail ${activeSecurity === feature.id ? 'active' : ''}`}
-            >
-              <div className="detail-header">
-                <h3>{feature.title}</h3>
-                <p className="detail-description">{feature.description}</p>
-              </div>
-
-              <div className="detail-features">
-                <h4>Recursos</h4>
-                <div className="features-grid">
-                  {feature.features.map((feat, index) => (
-                    <div key={index} className="feature-item">
-                      <div className="feature-check">
-                        <FaCheckCircle />
-                      </div>
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="detail-certifications">
-                <h4>Certificações</h4>
-                <div className="certifications-list">
-                  {feature.certifications.map((cert, index) => (
-                    <div key={index} className="certification-badge">
-                      {cert}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="detail-visual">
-                <div className={`security-visual visual-${feature.id}`}>
-                  {feature.id === 'lgpd' && (
-                    <div className="data-protection">
-                      <div className="data-layers">
-                        <div className="layer">Dados</div>
-                        <div className="layer protection">Criptografia</div>
-                        <div className="layer audit">Auditoria</div>
-                      </div>
-                    </div>
-                  )}
-                  {feature.id === 'encryption' && (
-                    <div className="encryption-visual">
-                      <div className="lock-animation">
-                        <FaLock className="pulse" />
-                      </div>
-                      <div className="key-rotation">
-                        <div className="key">🔑</div>
-                        <div className="arrow">→</div>
-                        <div className="key">🔐</div>
-                      </div>
-                    </div>
-                  )}
-                  {feature.id === 'sla' && (
-                    <div className="sla-visual">
-                      <div className="uptime-meter">
-                        <div className="meter-value">99.9%</div>
-                        <div className="meter-bar">
-                          <div className="bar-fill" style={{ width: '99.9%' }} />
-                        </div>
-                        <div className="meter-label">Uptime</div>
-                      </div>
-                    </div>
-                  )}
-                  {feature.id === 'backup' && (
-                    <div className="backup-visual">
-                      <div className="backup-locations">
-                        <div className="location">SP</div>
-                        <div className="location">RJ</div>
-                        <div className="location">MG</div>
-                      </div>
-                      <div className="data-sync">
-                        <div className="sync-line" />
-                        <div className="sync-dot" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="security-guarantee">
-        <div className="guarantee-card">
-          <div className="guarantee-icon">
-            <FaShieldAlt />
-          </div>
-          <div className="guarantee-content">
-            <h3>Garantia de Segurança</h3>
-            <p>
-              Nossa infraestrutura é auditada regularmente por empresas independentes. 
-              Oferecemos seguro contra violação de dados e compensação financeira por downtime.
-            </p>
-            <div className="guarantee-features">
-              <div className="guarantee-feature">
-                <FaCheckCircle />
-                <span>Auditorias trimestrais</span>
-              </div>
-              <div className="guarantee-feature">
-                <FaCheckCircle />
-                <span>Seguro de R$ 1M contra violação</span>
-              </div>
-              <div className="guarantee-feature">
-                <FaCheckCircle />
-                <span>Compensação por downtime</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente FAQ Estratégico
-const StrategicFAQ = () => {
-  const [activeCategory, setActiveCategory] = useState('implementation');
-  const [openQuestions, setOpenQuestions] = useState([]);
-
-  const toggleQuestion = (id) => {
-    setOpenQuestions(prev => 
-      prev.includes(id) 
-        ? prev.filter(q => q !== id)
-        : [...prev, id]
-    );
-  };
-
-  const faqCategories = [
-    {
-      id: 'implementation',
-      title: 'Implementação',
-      icon: <FaCog />,
-      questions: [
-        {
-          id: 'impl1',
-          question: 'Precisa instalar hardware nos veículos?',
-          answer: 'Não é obrigatório. Funcionamos via API com sistemas existentes. Para dados em tempo real, recomendamos dispositivos GPS simples que fornecemos sem custo adicional no plano empresarial.',
-          short: 'Não. Funcionamos com sistemas existentes via API.'
-        },
-        {
-          id: 'impl2',
-          question: 'Quanto tempo para implementar?',
-          answer: 'Em média 2-5 dias úteis. Para frotas pequenas (< 10 veículos), pode ser em 24h. A integração é não-invasiva e não interrompe suas operações.',
-          short: '2-5 dias úteis. Frotas pequenas em 24h.'
-        },
-        {
-          id: 'impl3',
-          question: 'Funciona com meu sistema atual?',
-          answer: 'Sim, temos integração nativa com os principais sistemas do mercado (TOTVS, SAP, Protheus) e API aberta para integração personalizada.',
-          short: 'Sim, integramos com todos os sistemas principais.'
-        }
-      ]
-    },
-    {
-      id: 'results',
-      title: 'Resultados',
-      icon: <FaChartLine />,
-      questions: [
-        {
-          id: 'res1',
-          question: 'Quanto tempo para ver resultados financeiros?',
-          answer: 'Primeiros resultados em 30 dias, ROI visível em 90 dias. Oferecemos garantia de resultados: se não economizar, devolvemos seu dinheiro.',
-          short: '30 dias para resultados, 90 dias para ROI garantido.'
-        },
-        {
-          id: 'res2',
-          question: 'Qual economia média dos clientes?',
-          answer: 'Clientes relatam redução de 25-40% nos custos operacionais. ROI médio de 320% no primeiro ano. Casos específicos podem variar.',
-          short: '25-40% redução de custos, 320% ROI médio.'
-        },
-        {
-          id: 'res3',
-          question: 'Funciona com frota pequena (1-5 veículos)?',
-          answer: 'Sim, perfeito para pequenas frotas. O plano Essencial é projetado para até 5 veículos e já mostra resultados significativos.',
-          short: 'Sim, plano especial para frotas pequenas.'
-        }
-      ]
-    },
-    {
-      id: 'support',
-      title: 'Suporte',
-      icon: <RiCustomerService2Line />,
-      questions: [
-        {
-          id: 'sup1',
-          question: 'Tem suporte humano ou só bot?',
-          answer: 'Suporte humano especializado 24/7 via chat, telefone e email. Além de bot para questões simples, temos especialistas para casos complexos.',
-          short: 'Suporte humano 24/7 com especialistas.'
-        },
-        {
-          id: 'sup2',
-          question: 'Qual o tempo de resposta do suporte?',
-          answer: 'Resposta em até 5 minutos para clientes empresariais, 15 minutos para outros planos. SLA de resolução de 4 horas para problemas críticos.',
-          short: '5 minutos resposta, 4 horas resolução (SLA).'
-        },
-        {
-          id: 'sup3',
-          question: 'Oferecem treinamento?',
-          answer: 'Sim, treinamento completo para equipe incluso. Online para todos, presencial para planos empresariais. Materiais sempre atualizados.',
-          short: 'Sim, treinamento completo incluso.'
-        }
-      ]
-    },
-    {
-      id: 'security',
-      title: 'Segurança',
-      icon: <FaLock />,
-      questions: [
-        {
-          id: 'sec1',
-          question: 'Meus dados estão seguros?',
-          answer: 'Totalmente. Criptografia AES-256, conformidade LGPD/GDPR, backup automático em 3 locais, auditorias trimestrais independentes.',
-          short: 'Sim, criptografia AES-256 + LGPD + auditorias.'
-        },
-        {
-          id: 'sec2',
-          question: 'Vocês vendem meus dados?',
-          answer: 'Nunca. Seus dados são seus. Política de zero compartilhamento com terceiros. Contrato com cláusulas de confidencialidade robustas.',
-          short: 'Nunca. Política de zero compartilhamento.'
-        },
-        {
-          id: 'sec3',
-          question: 'O que acontece se houver queda no sistema?',
-          answer: 'SLA 99.9% de disponibilidade. Em caso de queda, compensação financeira automática. Backup automático garante zero perda de dados.',
-          short: 'SLA 99.9% + compensação financeira.'
-        }
-      ]
-    }
-  ];
-
-  const activeCategoryData = faqCategories.find(cat => cat.id === activeCategory);
-
-  return (
-    <div className="strategic-faq-section">
-      <div className="section-header">
-        <PremiumBadge text="FAQ ESTRATÉGICO" color="orange" />
-        <h2 className="section-title">
-          Perguntas que <span className="gradient-text">Fecham Negócio</span>
-        </h2>
-        <p className="section-description">
-          Respostas diretas para as principais dúvidas dos tomadores de decisão
-        </p>
-      </div>
-
-      <div className="faq-categories">
-        {faqCategories.map((category) => (
-          <button
-            key={category.id}
-            className={`faq-category ${activeCategory === category.id ? 'active' : ''}`}
-            onClick={() => setActiveCategory(category.id)}
-          >
-            <div className="category-icon">{category.icon}</div>
-            <span className="category-title">{category.title}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="faq-container">
-        <div className="faq-questions">
-          {activeCategoryData.questions.map((item) => (
-            <div 
-              key={item.id}
-              className={`faq-item ${openQuestions.includes(item.id) ? 'open' : ''}`}
-            >
-              <button 
-                className="faq-question"
-                onClick={() => toggleQuestion(item.id)}
-              >
-                <div className="question-text">{item.question}</div>
-                <div className="question-icon">
-                  {openQuestions.includes(item.id) ? <FaChevronUp /> : <FaChevronDown />}
-                </div>
-              </button>
-              
-              <div className="faq-answer">
-                <div className="answer-short">
-                  <div className="short-label">Resposta direta:</div>
-                  <p>{item.short}</p>
-                </div>
-                <div className="answer-full">
-                  <div className="full-label">Detalhamento:</div>
-                  <p>{item.answer}</p>
-                </div>
-                
-                <div className="answer-cta">
-                  <button className="cta-btn">
-                    <FaComments />
-                    <span>Falar com especialista</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="faq-sidebar">
-          <div className="sidebar-card">
-            <h3>📞 Fale Diretamente</h3>
-            <p>Converse com um especialista sem compromisso</p>
-            <div className="contact-options">
-              <button className="contact-option">
-                <FaWhatsapp />
-                <span>WhatsApp</span>
-                <div className="option-badge">Resposta em 5min</div>
-              </button>
-              <button className="contact-option">
-                <FaPhone />
-                <span>Ligação</span>
-                <div className="option-badge">Imediato</div>
-              </button>
-              <button className="contact-option">
-                <FaVideo />
-                <span>Videochamada</span>
-                <div className="option-badge">Agendar</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <h3>🎯 Garantias</h3>
-            <div className="guarantees-list">
-              <div className="guarantee">
-                <FaCheckCircle />
-                <span>ROI em 90 dias ou devolução</span>
-              </div>
-              <div className="guarantee">
-                <FaCheckCircle />
-                <span>Implementação sem risco</span>
-              </div>
-              <div className="guarantee">
-                <FaCheckCircle />
-                <span>Suporte 24/7 com humano</span>
-              </div>
-              <div className="guarantee">
-                <FaCheckCircle />
-                <span>Cancelamento sem multa</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="sidebar-card">
-            <h3>📊 Dados Reais</h3>
-            <div className="real-stats">
-              <div className="real-stat">
-                <div className="stat-value">96%</div>
-                <div className="stat-label">Clientes Renovam</div>
-              </div>
-              <div className="real-stat">
-                <div className="stat-value">4.8/5</div>
-                <div className="stat-label">Avaliação</div>
-              </div>
-              <div className="real-stat">
-                <div className="stat-value">24h</div>
-                <div className="stat-label">Resposta</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="faq-cta">
-        <div className="cta-content">
-          <h3>Ainda com dúvidas?</h3>
-          <p>Agende uma demonstração personalizada com nosso time de especialistas</p>
-          <button className="transita-btn transita-btn-primary transita-btn-xl">
-            <span>Agendar Demonstração Personalizada</span>
-            <FaVideo />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente Feature Card com Hover 3D
-const FeatureCard = ({ icon, title, description, index }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    
-    const card = cardRef.current;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const rotateY = ((x - centerX) / centerX) * 5;
-    const rotateX = ((centerY - y) / centerY) * 5;
-    
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (cardRef.current) {
-      cardRef.current.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
-    }
-  };
-
-  return (
-    <div 
-      ref={cardRef}
-      className={`transita-feature-card ${isHovered ? 'hovered' : ''}`}
-      style={{ animationDelay: `${index * 100}ms` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      data-index={index}
-    >
-      <div className="feature-gradient" />
-      <div className="feature-content">
-        <div className="feature-icon-wrapper">
-          <div className="feature-icon-glow" />
-          <div className="feature-icon">{icon}</div>
-        </div>
-        <h3 className="feature-title">{title}</h3>
-        <p className="feature-description">{description}</p>
-        <div className="feature-link">
-          <span>Saiba mais</span>
-          <FaChevronRight />
-        </div>
-      </div>
-      
-      {isHovered && (
-        <div className="feature-hover-glow" />
-      )}
-    </div>
-  );
-};
-
-// Componente Solution Card Interativo
-const SolutionCard = ({ number, title, description, features, icon, delay = 0, stats }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div 
-      ref={ref}
-      className={`transita-solution-card ${isVisible ? 'visible' : ''} ${expanded ? 'expanded' : ''}`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <div className="solution-number">
-        {String(number).padStart(2, '0')}
-      </div>
-      
-      <div className="solution-header">
-        <div className="solution-icon-wrapper">
-          <div className="solution-icon-glow" />
-          <div className="solution-icon">{icon}</div>
-        </div>
-        <div className="solution-title-container">
-          <h3 className="solution-title">{title}</h3>
-          <button 
-            className="solution-expand-btn"
-            onClick={() => setExpanded(!expanded)}
-            aria-label={expanded ? 'Recolher' : 'Expandir'}
-          >
-            {expanded ? <FaCompressAlt /> : <FaExpandAlt />}
-          </button>
-        </div>
-      </div>
-      
-      <p className="solution-description">{description}</p>
-      
-      <div className="solution-features">
-        {features.slice(0, expanded ? features.length : 4).map((feature, index) => (
-          <div key={index} className="solution-feature">
-            <div className="feature-check">
-              <FaCheckCircle />
-            </div>
-            <span className="feature-text">{feature}</span>
-          </div>
-        ))}
-      </div>
-      
-      {stats && (
-        <div className="solution-stats">
-          {stats.map((stat, index) => (
-            <div key={index} className="solution-stat">
-              <div className="stat-value">{stat.value}</div>
-              <div className="stat-label">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      <div className="solution-actions">
-        <button className="transita-btn transita-btn-primary">
-          <span>Ver Demonstração</span>
-          <FaPlay />
-        </button>
-        <button className="transita-btn transita-btn-ghost">
-          <span>Documentação</span>
-          <FaChevronRight />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Componente Timeline Interativa
-const Timeline = ({ items }) => {
-  const [activeIndex, setActiveIndex] = useState(2);
-  const timelineRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animated');
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    if (timelineRef.current) {
-      const items = timelineRef.current.querySelectorAll('.timeline-item');
-      items.forEach(item => observer.observe(item));
-    }
-    
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div className="transita-timeline" ref={timelineRef}>
-      <div className="timeline-line">
-        <div className="timeline-progress" />
-      </div>
-      
-      {items.map((item, index) => (
-        <div 
-          key={index}
-          className={`timeline-item ${index === activeIndex ? 'active' : ''}`}
-          onClick={() => setActiveIndex(index)}
-        >
-          <div className="timeline-dot">
-            <div className="dot-ring" />
-            <div className="dot-core" />
-          </div>
-          
-          <div className="timeline-content">
-            <div className="timeline-year">{item.year}</div>
-            <h4 className="timeline-title">{item.title}</h4>
-            <p className="timeline-description">{item.description}</p>
-            
-            {index === activeIndex && (
-              <div className="timeline-highlights">
-                {item.highlights?.map((highlight, hIndex) => (
-                  <div key={hIndex} className="timeline-highlight">
-                    <FaBolt />
-                    <span>{highlight}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Componente Plan Card Premium
-const PlanCard = ({ title, price, description, features, popular = false, recommended = false, type = 'monthly' }) => {
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const calculatePrice = () => {
-    if (isAnnual && type === 'monthly') {
-      return `R$ ${(parseInt(price) * 0.8).toFixed(0)}/mês`;
-    }
-    return `R$ ${price}/mês`;
-  };
-
-  return (
-    <div 
-      className={`transita-plan-card ${popular ? 'popular' : ''} ${recommended ? 'recommended' : ''} ${isHovered ? 'hovered' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {popular && (
-        <div className="plan-badge">
-          <FaCrown />
-          <span>Mais Popular</span>
-        </div>
-      )}
-      
-      {recommended && (
-        <div className="plan-recommended">
-          <FaStar />
-          <span>Recomendado</span>
-        </div>
-      )}
-      
-      <div className="plan-header">
-        <div className="plan-icon">
-          {popular ? <FaCrown /> : recommended ? <FaStar /> : <FaCheckCircle />}
-        </div>
-        <h3 className="plan-title">{title}</h3>
-        <div className="plan-price">{calculatePrice()}</div>
-        <div className="plan-period">
-          {isAnnual ? 'Anual (20% OFF)' : 'Mensal'}
-          <button 
-            className="plan-toggle"
-            onClick={() => setIsAnnual(!isAnnual)}
-            aria-label="Alternar período"
-          >
-            <FaSync />
-          </button>
-        </div>
-      </div>
-      
-      <p className="plan-description">{description}</p>
-      
-      <div className="plan-features">
-        {features.map((feature, index) => (
-          <div key={index} className="plan-feature">
-            <div className="feature-check">
-              <FaCheckCircle />
-            </div>
-            <span>{feature}</span>
-          </div>
-        ))}
-      </div>
-      
-      <div className="plan-footer">
-        <button className="transita-btn transita-btn-primary">
-          <span>Começar Agora</span>
-          <FaArrowUp />
-        </button>
-        
-        {popular && (
-          <div className="plan-benefits">
-            <div className="benefit">
-              <FaShieldAlt />
-              <span>30 dias grátis</span>
-            </div>
-            <div className="benefit">
-              <FaUsers />
-              <span>Suporte prioritário</span>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {isHovered && <div className="plan-hover-glow" />}
-    </div>
-  );
-};
-
-// Componente Contact Channel Avançado
-const ContactChannel = ({ icon, title, description, responseTime, availability, status, actionText, actionIcon, color }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div 
-      className={`transita-contact-channel channel-${color} ${isHovered ? 'hovered' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="channel-header">
-        <div className="channel-icon-wrapper">
-          <div className="channel-icon-glow" />
-          <div className="channel-icon">{icon}</div>
-        </div>
-        
-        <div className="channel-status">
-          <div className={`status-indicator ${status === 'Online' ? 'online' : status === 'Disponível' ? 'available' : 'offline'}`}>
-            <div className="status-pulse" />
-          </div>
-          <span className="status-text">{status}</span>
-        </div>
-      </div>
-      
-      <div className="channel-content">
-        <h4 className="channel-title">{title}</h4>
-        <p className="channel-description">{description}</p>
-        
-        <div className="channel-metrics">
-          <div className="channel-metric">
-            <div className="metric-label">
-              <FaClock />
-              <span>Tempo de Resposta</span>
-            </div>
-            <div className="metric-value">{responseTime}</div>
-          </div>
-          
-          <div className="channel-metric">
-            <div className="metric-label">
-              <FaCalendarAlt />
-              <span>Disponibilidade</span>
-            </div>
-            <div className="metric-value">{availability}</div>
-          </div>
-        </div>
-      </div>
-      
-      <button className="transita-btn transita-btn-gradient">
-        {actionText} {actionIcon}
-      </button>
+      {/* Modal do Gráfico */}
+      <ChartModal 
+        chart={selectedChart} 
+        onClose={() => setSelectedChart(null)} 
+      />
     </div>
   );
 };
@@ -2611,243 +937,17 @@ const ContactChannel = ({ icon, title, description, responseTime, availability, 
 // ==========================================================================
 
 const TransitaAI = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [activeSection, setActiveSection] = useState('hero');
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const heroRef = useRef(null);
-  const dashboardRef = useRef(null);
-  const solutionsRef = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const docHeight = document.body.offsetHeight - window.innerHeight;
-      const scrollPercent = scrollTop / docHeight;
-      setScrollProgress(scrollPercent * 100);
-      
-      // Detect active section
-      const sections = ['hero', 'demo', 'solutions', 'social', 'comparison', 'howitworks', 'roi', 'dashboard', 'history', 'security', 'faq', 'plans', 'contact'];
-      const sectionOffsets = sections.map(section => {
-        const el = document.getElementById(section);
-        return el ? el.offsetTop : 0;
-      });
-      
-      for (let i = sections.length - 1; i >= 0; i--) {
-        if (scrollTop >= sectionOffsets[i] - 100) {
-          setActiveSection(sections[i]);
-          break;
-        }
-      }
-    };
-    
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('mousemove', handleMouseMove);
-    
-    // Criar partículas avançadas
-    const createParticles = () => {
-      const hero = heroRef.current;
-      if (!hero) return;
-      
-      const particles = [];
-      const colors = ['#0A6CFF', '#FF6A00', '#10B981', '#8B5CF6', '#EC4899'];
-      
-      for (let i = 0; i < 40; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'transita-particle';
-        
-        const size = Math.random() * 4 + 2;
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        
-        particle.style.cssText = `
-          position: absolute;
-          width: ${size}px;
-          height: ${size}px;
-          background: ${color};
-          border-radius: 50%;
-          left: ${Math.random() * 100}%;
-          top: ${Math.random() * 100}%;
-          opacity: ${Math.random() * 0.4 + 0.1};
-          filter: blur(${size / 2}px);
-          z-index: 1;
-          pointer-events: none;
-        `;
-        
-        hero.appendChild(particle);
-        particles.push(particle);
-        
-        // Animar partícula
-        const duration = Math.random() * 20 + 15;
-        const xMove = Math.random() * 200 - 100;
-        const yMove = Math.random() * 200 - 100;
-        
-        particle.style.animation = `
-          transita-particle-float ${duration}s ease-in-out infinite,
-          transita-particle-opacity ${duration}s ease-in-out infinite,
-          transita-particle-rotate ${duration * 2}s linear infinite
-        `;
-        
-        particle.style.setProperty('--x-move', `${xMove}px`);
-        particle.style.setProperty('--y-move', `${yMove}px`);
-      }
-    };
-    
-    // Criar grid interativo
-    const createGrid = () => {
-      const dashboard = dashboardRef.current;
-      if (!dashboard) return;
-      
-      const grid = document.createElement('div');
-      grid.className = 'interactive-grid';
-      
-      for (let i = 0; i < 50; i++) {
-        const line = document.createElement('div');
-        line.className = 'grid-line';
-        grid.appendChild(line);
-      }
-      
-      dashboard.appendChild(grid);
-    };
-    
-    createParticles();
-    createGrid();
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  // Mouse follower effect
-  useEffect(() => {
-    const cursor = document.querySelector('.mouse-follower');
-    if (cursor) {
-      cursor.style.transform = `translate(${mousePosition.x}px, ${mousePosition.y}px)`;
-    }
-  }, [mousePosition]);
-
-  // Dados das soluções
-  const solutions = [
-    {
-      number: 1,
-      title: 'Gestão Inteligente de Multas',
-      description: 'Sistema automático de identificação, gerenciamento e contestação de multas. Receba alertas em tempo real, acompanhe prazos e reduza custos em até 60% com nossa plataforma inteligente.',
-      features: [
-        'Identificação automática de infrações',
-        'Contestações otimizadas com IA',
-        'Alertas em tempo real',
-        'Relatórios detalhados e personalizáveis',
-        'Integração com órgãos de trânsito',
-        'Histórico completo de multas'
-      ],
-      icon: <FaBell />,
-      stats: [
-        { value: '60%', label: 'Redução de custos' },
-        { value: '24h', label: 'Tempo de resposta' },
-        { value: '99%', label: 'Precisão' }
-      ]
-    },
-    {
-      number: 2,
-      title: 'Gestão de Motoristas',
-      description: 'Controle completo da equipe de motoristas com monitoramento de desempenho, treinamentos, compliance e análise de comportamento. Aumente a segurança e eficiência da sua operação.',
-      features: [
-        'Perfil completo de motoristas',
-        'Treinamentos personalizados',
-        'Sistema de pontuação',
-        'Compliance em tempo real',
-        'Análise de comportamento',
-        'Relatórios de desempenho'
-      ],
-      icon: <FaUserCog />,
-      stats: [
-        { value: '40%', label: 'Mais segurança' },
-        { value: '25%', label: 'Eficiência' },
-        { value: '85%', label: 'Satisfação' }
-      ]
-    },
-    {
-      number: 3,
-      title: 'Manutenção Preditiva',
-      description: 'Sistema de manutenção preditiva que antecipa falhas e otimiza agendamentos. Reduza downtime em 45% e estenda a vida útil da frota com manutenção inteligente.',
-      features: [
-        'Agendamento automático',
-        'Histórico completo de manutenções',
-        'Alertas preditivos',
-        'Custos otimizados',
-        'Monitoramento de peças',
-        'Relatórios de vida útil'
-      ],
-      icon: <FaWrench />,
-      stats: [
-        { value: '45%', label: 'Menos downtime' },
-        { value: '30%', label: 'Economia' },
-        { value: '20%', label: 'Vida útil' }
-      ]
-    },
-    {
-      number: 4,
-      title: 'Controle Financeiro',
-      description: 'Gestão financeira completa da operação logística. Controle de custos por veículo, análise de ROI, relatórios fiscais e integração com sistemas contábeis.',
-      features: [
-        'Custos por veículo detalhados',
-        'Análise de ROI avançada',
-        'Relatórios fiscais automáticos',
-        'Integração contábil completa',
-        'Previsões financeiras',
-        'Dashboard customizável'
-      ],
-      icon: <FaDollarSign />,
-      stats: [
-        { value: '35%', label: 'Redução custos' },
-        { value: '50%', label: 'ROI' },
-        { value: '100%', label: 'Conformidade' }
-      ]
-    }
-  ];
-
-  // Dados da timeline
-  const timelineItems = [
-    {
-      year: '2018',
-      title: 'Fundação',
-      description: 'Criação da Transita.AI com foco em transformar a logística brasileira',
-      highlights: ['Startup fundada', 'Primeiro protótipo', 'Equipe de 5 pessoas']
-    },
-    {
-      year: '2019',
-      title: 'Primeiros Clientes',
-      description: 'Implementação para 10 empresas pioneiras no setor logístico',
-      highlights: ['10 primeiros clientes', 'Crescimento 300%', 'Equipe 20 pessoas']
-    },
-    {
-      year: '2020',
-      title: 'Expansão Nacional',
-      description: 'Presença em 5 estados brasileiros e crescimento acelerado',
-      highlights: ['5 estados', '+100 clientes', 'Investimento série A']
-    },
-    {
-      year: '2021',
-      title: 'IA Avançada',
-      description: 'Implementação de algoritmos de machine learning próprios',
-      highlights: ['Patentes registradas', 'IA própria', 'Prêmios de inovação']
-    },
-    {
-      year: '2022',
-      title: 'Escala Nacional',
-      description: 'Atendimento em todo território nacional com 100+ colaboradores',
-      highlights: ['Todo Brasil', '+500 clientes', '100 colaboradores']
-    }
-  ];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
+  const containerRef = useRef(null);
 
   // Dados dos planos
-  const plans = [
-    {
-      title: 'Essencial',
-      price: '49',
+  const plansData = {
+    essencial: {
+      name: 'Essencial',
+      monthlyPrice: 49,
+      yearlyPrice: 470, // 49 * 12 * 0.8 = 470.4 (20% desconto)
       description: 'Para pequenas frotas iniciantes',
       features: [
         'Até 5 veículos ativos',
@@ -2858,11 +958,11 @@ const TransitaAI = () => {
         'Atualizações mensais'
       ]
     },
-    {
-      title: 'Profissional',
-      price: '99',
+    profissional: {
+      name: 'Profissional',
+      monthlyPrice: 99,
+      yearlyPrice: 950, // 99 * 12 * 0.8 = 950.4
       description: 'Ideal para empresas em crescimento',
-      popular: true,
       features: [
         'Até 20 veículos ativos',
         'Rastreamento avançado',
@@ -2872,13 +972,14 @@ const TransitaAI = () => {
         'Dashboard personalizável',
         'Relatórios avançados',
         'Integrações ilimitadas'
-      ]
+      ],
+      popular: true
     },
-    {
-      title: 'Empresarial',
-      price: '249',
+    empresarial: {
+      name: 'Empresarial',
+      monthlyPrice: 249,
+      yearlyPrice: 2395, // 249 * 12 * 0.8 = 2395.2
       description: 'Solução completa para grandes empresas',
-      recommended: true,
       features: [
         'Frota ilimitada',
         'Todos os recursos premium',
@@ -2888,650 +989,1147 @@ const TransitaAI = () => {
         'Treinamentos presenciais',
         'SLA 99.9%',
         'Integração white-label'
-      ]
+      ],
+      recommended: true
+    }
+  };
+
+  // Dados para os gráficos dos MetricCards
+  const efficiencyChartData = {
+    labels: ['1', '2', '3', '4', '5', '6', '7'],
+    datasets: [{
+      data: [65, 70, 75, 80, 85, 88, 92],
+      borderColor: 'var(--blue-400)',
+      backgroundColor: 'rgba(51, 133, 255, 0.12)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointBackgroundColor: 'var(--blue-400)',
+      fill: true
+    }]
+  };
+
+  const fuelChartData = {
+    labels: ['1', '2', '3', '4', '5', '6', '7'],
+    datasets: [{
+      data: [85, 82, 78, 75, 72, 70, 68],
+      borderColor: 'var(--green-400)',
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointBackgroundColor: 'var(--green-400)',
+      fill: true
+    }]
+  };
+
+  const timeChartData = {
+    labels: ['1', '2', '3', '4', '5', '6', '7'],
+    datasets: [{
+      data: [30, 45, 55, 65, 85, 110, 142],
+      borderColor: 'var(--purple-400)',
+      backgroundColor: 'rgba(139, 92, 246, 0.12)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointBackgroundColor: 'var(--purple-400)',
+      fill: true
+    }]
+  };
+
+  const finesChartData = {
+    labels: ['1', '2', '3', '4', '5', '6', '7'],
+    datasets: [{
+      data: [85, 80, 75, 70, 65, 60, 40],
+      borderColor: 'var(--orange-400)',
+      backgroundColor: 'rgba(255, 106, 0, 0.12)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointBackgroundColor: 'var(--orange-400)',
+      fill: true
+    }]
+  };
+
+  // Dados para o FAQ
+  const faqItems = [
+    {
+      title: 'Como funciona a integração?',
+      content: 'Nossa integração é feita via API em 24 horas, sem necessidade de hardware adicional. Funcionamos com todos os sistemas existentes.',
+      icon: <FaPlug />
+    },
+    {
+      title: 'Qual o tempo para ver resultados?',
+      content: 'Primeiros resultados em 30 dias, ROI visível em 90 dias. Oferecemos garantia de resultados.',
+      icon: <FaChartLine />
+    },
+    {
+      title: 'Precisa de hardware especial?',
+      content: 'Não é obrigatório. Para dados em tempo real, recomendamos dispositivos GPS simples que fornecemos sem custo adicional.',
+      icon: <FaTruck />
+    },
+    {
+      title: 'Como é a segurança dos dados?',
+      content: 'Criptografia AES-256, conformidade LGPD/GDPR, backup automático em 3 locais, auditorias trimestrais independentes.',
+      icon: <FaLock />
     }
   ];
 
-  // Dados dos canais de contato
-  const contactChannels = [
-    {
-      icon: <FaComments />,
-      title: 'Chat em Tempo Real',
-      description: 'Suporte técnico imediato com nossos especialistas',
-      responseTime: 'Resposta em ≤ 5min',
-      availability: '24 horas / 7 dias',
-      status: 'Online',
-      actionText: 'Iniciar Chat',
-      actionIcon: <FaChevronRight />,
-      color: 'blue'
-    },
-    {
-      icon: <FaWhatsapp />,
-      title: 'WhatsApp Business',
-      description: 'Atendimento rápido pelo WhatsApp',
-      responseTime: 'Resposta em ≤ 15min',
-      availability: '24 horas / 7 dias',
-      status: 'Online',
-      actionText: 'Conversar Agora',
-      actionIcon: <FaChevronRight />,
-      color: 'green'
-    },
-    {
-      icon: <FaVideo />,
-      title: 'Videochamada',
-      description: 'Suporte personalizado com screenshare',
-      responseTime: 'Agendamento em 24h',
-      availability: 'Seg-Sex: 9h-18h',
-      status: 'Disponível',
-      actionText: 'Agendar Chamada',
-      actionIcon: <FaCalendarAlt />,
-      color: 'purple'
-    },
-    {
-      icon: <FaEnvelope />,
-      title: 'Email Corporativo',
-      description: 'Para propostas comerciais e parcerias',
-      responseTime: 'Resposta em ≤ 4h',
-      availability: 'Seg-Sex: 9h-18h',
-      status: 'Disponível',
-      actionText: 'Enviar Email',
-      actionIcon: <FaChevronRight />,
-      color: 'orange'
-    }
-  ];
+  // Efeito para detectar a seção ativa
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['hero', 'metrics', 'dashboard', 'journey', 'plans', 'contact', 'testimonials', 'faq'];
+      const scrollPosition = window.scrollY + 100;
 
-  // Dados das features
-  const features = [
-    {
-      icon: <MdAnalytics />,
-      title: 'Analytics em Tempo Real',
-      description: 'Monitoramento contínuo de todas as métricas operacionais com atualizações em tempo real.'
-    },
-    {
-      icon: <FaBell />,
-      title: 'Alertas Inteligentes',
-      description: 'Notificações proativas para problemas e oportunidades de otimização.'
-    },
-    {
-      icon: <MdLocationOn />,
-      title: 'Monitoramento GPS',
-      description: 'Rastreamento preciso de toda a frota com atualizações a cada 30 segundos.'
-    },
-    {
-      icon: <FaChartBar />,
-      title: 'Relatórios Automáticos',
-      description: 'Relatórios detalhados com insights acionáveis para tomada de decisão.'
-    },
-    {
-      icon: <MdOutlineEco />,
-      title: 'Sustentabilidade',
-      description: 'Monitoramento de emissões e rotas ecológicas para reduzir impacto ambiental.'
-    },
-    {
-      icon: <MdSecurity />,
-      title: 'Segurança Total',
-      description: 'Sistema multicamada com criptografia de ponta a ponta e compliance total.'
-    }
-  ];
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
 
-  // Dados dos valores
-  const values = [
-    {
-      icon: <MdTrendingUp />,
-      title: 'Inovação Constante',
-      description: 'Buscamos constantemente novas tecnologias e soluções criativas para superar expectativas.'
-    },
-    {
-      icon: <FaHandshake />,
-      title: 'Parceria Estratégica',
-      description: 'Trabalhamos lado a lado com nossos clientes, construindo relações de longo prazo.'
-    },
-    {
-      icon: <IoShieldCheckmark />,
-      title: 'Confiança Total',
-      description: 'Segurança, transparência e confiabilidade são a base de todas as nossas relações.'
-    },
-    {
-      icon: <FaLeaf />,
-      title: 'Sustentabilidade',
-      description: 'Compromisso com operações eco-friendly e responsabilidade ambiental em todas as ações.'
-    }
-  ];
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ==========================================================================
+  // JS PARA ANIMAÇÕES DE SCROLL 
+  // ==========================================================================
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+
+          // Para stagger effects
+          if (entry.target.classList.contains('stagger-item')) {
+            const items = entry.target.querySelectorAll('.stagger-item');
+            items.forEach((item, index) => {
+              item.style.setProperty('--delay', `${index * 0.1}s`);
+              item.classList.add('visible');
+            });
+          }
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.animate-on-scroll, .progressive-reveal').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="transita-ai">
-      {/* Mouse Follower */}
-      <div className="mouse-follower" />
-      
-      {/* Scroll Progress Bar */}
-      <div className="transita-scroll-progress">
-        <div 
-          className="transita-progress-bar" 
-          style={{ width: `${scrollProgress}%` }}
-        >
-          <div className="progress-glow" />
-        </div>
-      </div>
-      
-      {/* Navigation Dots */}
-      <div className="section-navigation">
-        {['hero', 'demo', 'solutions', 'social', 'comparison', 'howitworks', 'roi', 'dashboard', 'history', 'security', 'faq', 'plans', 'contact'].map((section) => (
-          <a 
-            key={section}
-            href={`#${section}`}
-            className={`nav-dot ${activeSection === section ? 'active' : ''}`}
-            title={section.charAt(0).toUpperCase() + section.slice(1)}
-          >
-            <div className="dot-ring" />
-            <div className="dot-core" />
-          </a>
-        ))}
-      </div>
-      
+    <div ref={containerRef} className="transita-ai">
       {/* Hero Section */}
-      <section 
-        id="hero"
-        ref={heroRef}
-        className="transita-hero-section"
-      >
-        <div className="hero-background">
-          <VideoHero />
-        </div>
+      <section id="hero" className="transita-hero-section">
+        <VideoHero />
       </section>
 
-      {/* NOVA SEÇÃO: Mini Demo Interativa */}
-      <section id="demo" className="demo-section">
-        <div className="container">
-          <InteractiveDemo />
+      {/* Video Demo Section */}
+<section id="video-demo" className="video-demo-section">
+  <div className="container">
+    <div className="video-demo-content">
+      <div className="video-demo-text">
+        <h2>Veja Todas as Funcionalidades em Ação</h2>
+        <p>Assista a uma demonstração completa de como nossa IA transforma sua operação logística, otimizando rotas, reduzindo custos e aumentando a eficiência da frota.</p>
+      </div>
+      <div className="video-demo-player">
+        <div className="video-container">
+          <iframe
+            src="https://www.youtube.com/embed/MMyZ9Pu01RI"
+            title="Demonstração da IA Logística"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="youtube-video"
+          ></iframe>
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
 
-      {/* Soluções Section */}
-      <section id="solutions" className="transita-solutions-section">
+      {/* Metrics Section */}
+      <section id="metrics" className="metrics-section">
         <div className="container">
+          <GreetingBanner />
           <div className="section-header">
-            <PremiumBadge text="SOLUÇÕES INTELIGENTES" color="blue" />
-            <h2 className="section-title">
-              Transforme sua <span className="gradient-text">Operação Logística</span>
+            <PremiumBadge text="MÉTRICAS EM TEMPO REAL" color="blue" />
+            <h2 className="section-title gradient-text">
+              Resultados que Impressionam
             </h2>
             <p className="section-description">
-              Tecnologia avançada desenvolvida para maximizar eficiência, reduzir custos e transformar 
-              completamente sua operação com inteligência artificial.
+              Dados atualizados em tempo real mostram o impacto da Transita.AI na sua operação
             </p>
           </div>
           
-          <div ref={solutionsRef} className="solutions-grid">
-            {solutions.map((solution, index) => (
-              <SolutionCard
-                key={index}
-                number={solution.number}
-                title={solution.title}
-                description={solution.description}
-                features={solution.features}
-                icon={solution.icon}
-                delay={index * 150}
-                stats={solution.stats}
-              />
-            ))}
+          <div className="metrics-grid">
+            <MetricCard
+              title="Eficiência da Frota"
+              value="92%"
+              change="+2.4%"
+              icon={<MdSpeed />}
+              chartData={efficiencyChartData}
+              trend="up"
+              delay={0}
+            />
+            <MetricCard
+              title="Economia de Combustível"
+              value="18%"
+              change="+5.1%"
+              icon={<FaGasPump />}
+              chartData={fuelChartData}
+              trend="up"
+              delay={150}
+            />
+            <MetricCard
+              title="Tempo Economizado"
+              value="142h"
+              change="+22%"
+              icon={<FaClock />}
+              chartData={timeChartData}
+              trend="up"
+              delay={300}
+            />
+            <MetricCard
+              title="Redução de Multas"
+              value="40%"
+              change="+15%"
+              icon={<FaBell />}
+              chartData={finesChartData}
+              trend="up"
+              delay={450}
+            />
           </div>
         </div>
       </section>
 
-      {/* NOVA SEÇÃO: Prova Social REAL */}
-      <section id="social" className="social-proof-section">
-        <div className="container">
-          <SocialProof />
-        </div>
-      </section>
-
-      {/* NOVA SEÇÃO: Antes vs Depois */}
-      <section id="comparison" className="before-after-section">
-        <div className="container">
-          <BeforeAfterComparison />
-        </div>
-      </section>
-
-      {/* NOVA SEÇÃO: Como Funciona em 3 Passos */}
-      <section id="howitworks" className="how-it-works-section">
-        <div className="container">
-          <HowItWorks />
-        </div>
-      </section>
-
-      {/* NOVA SEÇÃO: ROI Calculator */}
-      <section id="roi" className="roi-calculator-section">
-        <div className="container">
-          <ROICalculator />
-        </div>
-      </section>
-
-      {/* Dashboard Section */}
-      <section id="dashboard" className="transita-dashboard-section">
-        <div className="dashboard-background">
-          <div className="dashboard-gradient" />
-          <div ref={dashboardRef} className="dashboard-grid" />
-        </div>
-        
+      {/* Dashboard Inteligente Section */}
+      <section id="dashboard" className="dashboard-section">
         <div className="container">
           <div className="section-header">
             <PremiumBadge text="DASHBOARD INTELIGENTE" color="purple" />
-            <h2 className="section-title">
-              Controle Total em <span className="gradient-text">Tempo Real</span>
-            </h2>
-          </div>
-          
-          <div className="dashboard-content">
-            <div className="dashboard-text">
-              <h3 className="dashboard-subtitle">
-                Tudo que você precisa em <span className="highlight">um só lugar</span>
-              </h3>
-              <p className="dashboard-description">
-                Monitoramento completo da sua frota com análises preditivas, alertas inteligentes 
-                e tomada de decisão baseada em dados em tempo real.
-              </p>
-              
-              <div className="features-grid">
-                {features.map((feature, index) => (
-                  <FeatureCard
-                    key={index}
-                    icon={feature.icon}
-                    title={feature.title}
-                    description={feature.description}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            <div className="dashboard-preview-large">
-              <div className="preview-header">
-                <h3>Visão Geral da Frota</h3>
-                <div className="preview-actions">
-                  <button className="preview-action">
-                    <FaSync />
-                    <span>Atualizar</span>
-                  </button>
-                  <button className="preview-action">
-                    <FaChartLine />
-                    <span>Exportar</span>
-                  </button>
-                </div>
-              </div>
-              
-              <div className="preview-content">
-                <div className="live-metrics">
-                  <div className="live-metric">
-                    <div className="live-value">24</div>
-                    <div className="live-label">Veículos Ativos</div>
-                  </div>
-                  <div className="live-metric">
-                    <div className="live-value">18</div>
-                    <div className="live-label">Rotas Otimizadas</div>
-                  </div>
-                  <div className="live-metric">
-                    <div className="live-value">42</div>
-                    <div className="live-label">Horas Economizadas</div>
-                  </div>
-                </div>
-                
-                <div className="performance-chart">
-                  <div className="chart-header">
-                    <h4>Desempenho da Frota</h4>
-                    <div className="chart-period">Últimos 7 dias</div>
-                  </div>
-                  <div className="chart-bars">
-                    {[65, 80, 45, 90, 70, 85, 95].map((height, index) => (
-                      <div key={index} className="chart-bar-container">
-                        <div 
-                          className="chart-bar" 
-                          style={{ height: `${height}%` }}
-                        >
-                          <div className="bar-value">{height}%</div>
-                        </div>
-                        <div className="bar-label">Dia {index + 1}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* História & Valores Section */}
-      <section id="history" className="transita-history-section">
-        <div className="container">
-          <div className="section-header">
-            <PremiumBadge text="NOSSA JORNADA" color="green" />
-            <h2 className="section-title">
-              História & <span className="gradient-text">Valores</span>
+            <h2 className="section-title gradient-text">
+              Controle Total em Tempo Real
             </h2>
             <p className="section-description">
-              Transformando a logística brasileira com tecnologia de ponta e inovação 
-              contínua desde 2018.
+              Monitoramento completo da sua frota com análises preditivas, alertas inteligentes 
+              e tomada de decisão baseada em dados em tempo real.
             </p>
           </div>
           
-          <div className="history-content">
-            <div className="history-text">
-              <p className="history-paragraph">
-                Desde 2018, a <span className="highlight">Transita.AI</span> vem revolucionando 
-                o setor logístico brasileiro através da tecnologia de ponta. Nossa missão é 
-                simplificar a complexidade das operações logísticas, proporcionando eficiência, 
-                redução de custos e sustentabilidade para empresas de todos os portes.
-              </p>
-              
-              <div className="values-grid">
-                {values.map((value, index) => (
-                  <div key={index} className="value-card">
-                    <div className="value-icon">{value.icon}</div>
-                    <h4>{value.title}</h4>
-                    <p>{value.description}</p>
-                  </div>
-                ))}
+          <DashboardInteligente />
+        </div>
+      </section>
+
+      {/* Nossa Jornada Section */}
+      <section id="journey" className="journey-section">
+        <div className="container">
+          <div className="section-header">
+            <PremiumBadge text="NOSSA JORNADA" color="green" />
+            <h2 className="section-title gradient-text">
+              História & Valores
+            </h2>
+            <p className="section-description">
+              Transformando a logística brasileira com tecnologia de ponta e inovação contínua desde 2018.
+            </p>
+          </div>
+          
+          <div className="journey-layout">
+            <div className="journey-left">
+              <div className="journey-header">
+                <div className="journey-logo">
+                  <img src={logoBanner} alt="Transita.AI Logo" className="journey-logo-image" />
+                </div>
+                <div className="journey-text">
+                  <p className="journey-intro">
+                    Desde 2018, a Transita.AI vem revolucionando o setor logístico brasileiro através da tecnologia de ponta. Nossa missão é simplificar a complexidade das operações logísticas, proporcionando eficiência, redução de custos e sustentabilidade para empresas de todos os portes.
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div className="history-visual">
-              <Timeline items={timelineItems} />
+            <div className="journey-right">
+              <div className="values-grid">
+                <div className="value-item">
+                  <div className="value-icon">
+                    <AiOutlineRocket />
+                  </div>
+                  <h3>Inovação Constante</h3>
+                  <p>Buscamos constantemente novas tecnologias e soluções criativas para superar expectativas.</p>
+                </div>
+                
+                <div className="value-item">
+                  <div className="value-icon">
+                    <FaHandshake />
+                  </div>
+                  <h3>Parceria Estratégica</h3>
+                  <p>Trabalhamos lado a lado com nossos clientes, construindo relações de longo prazo.</p>
+                </div>
+                
+                <div className="value-item">
+                  <div className="value-icon">
+                    <FaShieldAlt />
+                  </div>
+                  <h3>Confiança Total</h3>
+                  <p>Segurança, transparência e confiabilidade são a base de todas as nossas relações.</p>
+                </div>
+                
+                <div className="value-item">
+                  <div className="value-icon">
+                    <FaLeaf />
+                  </div>
+                  <h3>Sustentabilidade</h3>
+                  <p>Compromisso com operações eco-friendly e responsabilidade ambiental em todas as ações.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="timeline-tree">
+            <div className="timeline-cards-grid">
+              <div className="timeline-card">
+                <div className="timeline-year">2018</div>
+                <h4>Fundação</h4>
+                <p>Criação da Transita.AI com foco em transformar a logística brasileira</p>
+              </div>
+
+              <div className="timeline-card">
+                <div className="timeline-year">2019</div>
+                <h4>Primeiros Clientes</h4>
+                <p>Implementação para 10 empresas pioneiras no setor logístico</p>
+              </div>
+
+              <div className="timeline-card">
+                <div className="timeline-year">2020</div>
+                <h4>Expansão Nacional</h4>
+                <p>Presença em 5 estados brasileiros e crescimento acelerado</p>
+                <div className="timeline-stats">
+                  <span>5 estados</span>
+                  <span>+100 clientes</span>
+                  <span>Investimento série A</span>
+                </div>
+              </div>
+
+              <div className="timeline-card">
+                <div className="timeline-year">2021</div>
+                <h4>IA Avançada</h4>
+                <p>Implementação de algoritmos de machine learning próprios</p>
+              </div>
+
+              <div className="timeline-card">
+                <div className="timeline-year">2022</div>
+                <h4>Escala Nacional</h4>
+                <p>Atendimento em todo território nacional com 100+ colaboradores</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* NOVA SEÇÃO: Segurança & Compliance */}
-      <section id="security" className="security-compliance-section">
-        <div className="container">
-          <SecurityCompliance />
-        </div>
-      </section>
-
-      {/* NOVA SEÇÃO: FAQ Estratégico */}
-      <section id="faq" className="strategic-faq-section">
-        <div className="container">
-          <StrategicFAQ />
-        </div>
-      </section>
-
-      {/* Planos Section */}
-      <section id="plans" className="transita-plans-section">
-        <div className="plans-background">
-          <div className="plans-gradient" />
-        </div>
-        
+    
+      {/* Planos Premium Section */}
+      <section id="plans" className="plans-section">
         <div className="container">
           <div className="section-header">
-            <PremiumBadge text="PLANOS PREMIUM" color="orange" />
-            <h2 className="section-title">
-              Escolha o Plano <span className="gradient-text">Perfeito</span>
+            <PremiumBadge text="PLANOS PREMIUM" color="purple" />
+            <h2 className="section-title gradient-text">
+              Escolha o Plano Perfeito
             </h2>
             <p className="section-description">
               Soluções que crescem com você, do essencial ao empresarial.
             </p>
           </div>
-          
-          <div className="plans-toggle">
-            <div className="toggle-container">
-              <span className="toggle-label">Mensal</span>
-              <div className="toggle-switch">
-                <div className="switch-track" />
-                <div className="switch-thumb" />
+
+          <div className="plans-content">
+            {/* Toggle Mensal/Anual */}
+            <div className="billing-toggle">
+              <div className="toggle-options">
+                <button
+                  className={`toggle-btn ${billingCycle === 'monthly' ? 'active' : ''}`}
+                  onClick={() => setBillingCycle('monthly')}
+                >
+                  Mensal
+                </button>
+                <button
+                  className={`toggle-btn ${billingCycle === 'yearly' ? 'active' : ''}`}
+                  onClick={() => setBillingCycle('yearly')}
+                >
+                  Anual <span className="discount-badge">-20%</span>
+                </button>
               </div>
-              <span className="toggle-label active">
-                Anual <span className="discount">-20%</span>
-              </span>
             </div>
-          </div>
-          
-          <div className="plans-grid">
-            {plans.map((plan, index) => (
-              <PlanCard
-                key={index}
-                title={plan.title}
-                price={plan.price}
-                description={plan.description}
-                features={plan.features}
-                popular={plan.popular}
-                recommended={plan.recommended}
-              />
-            ))}
-          </div>
-          
-          <div className="plans-footer">
-            <div className="plans-guarantee">
-              <FaShieldAlt />
-              <span>Garantia de 30 dias ou seu dinheiro de volta</span>
+
+            {/* Planos Grid */}
+            <div className="plans-grid">
+              {/* Essencial */}
+              <div className="plan-card">
+                <div className="plan-header">
+                  <h3>{plansData.essencial.name}</h3>
+                  <div className="plan-price">
+                    <span className="currency">R$</span>
+                    <span className="amount">
+                      {billingCycle === 'monthly'
+                        ? plansData.essencial.monthlyPrice
+                        : Math.round(plansData.essencial.yearlyPrice / 12)
+                      }
+                    </span>
+                    <span className="period">/{billingCycle === 'monthly' ? 'mês' : 'mês'}</span>
+                    {billingCycle === 'yearly' && (
+                      <div className="yearly-total">
+                        <span className="plan-total">Total anual: R$ {plansData.essencial.yearlyPrice}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="plan-description">{plansData.essencial.description}</p>
+                </div>
+
+                <div className="plan-features">
+                  {plansData.essencial.features.map((feature, index) => (
+                    <div key={index} className="feature-item">
+                      <FaCheck className="feature-icon" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button className="plan-btn">
+                  <span>Começar Agora</span>
+                  <FaChevronRight />
+                </button>
+              </div>
+
+              {/* Profissional - Mais Popular */}
+              <div className="plan-card popular">
+                <div className="popular-badge">
+                  <FaCrown />
+                  <span>Mais Popular</span>
+                </div>
+
+                <div className="plan-header">
+                  <h3>{plansData.profissional.name}</h3>
+                  <div className="plan-price">
+                    <span className="currency">R$</span>
+                    <span className="amount">
+                      {billingCycle === 'monthly'
+                        ? plansData.profissional.monthlyPrice
+                        : Math.round(plansData.profissional.yearlyPrice / 12)
+                      }
+                    </span>
+                    <span className="period">/{billingCycle === 'monthly' ? 'mês' : 'mês'}</span>
+                    {billingCycle === 'yearly' && (
+                      <div className="yearly-total">
+                        <span className="plan-total">Total anual: R$ {plansData.profissional.yearlyPrice}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="plan-description">{plansData.profissional.description}</p>
+                </div>
+
+                <div className="plan-features">
+                  {plansData.profissional.features.map((feature, index) => (
+                    <div key={index} className="feature-item">
+                      <FaCheck className="feature-icon" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="plan-highlights">
+                  <div className="highlight-item">
+                    <FaClock />
+                    <span>30 dias grátis</span>
+                  </div>
+                  <div className="highlight-item">
+                    <FaShieldAlt />
+                    <span>Suporte prioritário</span>
+                  </div>
+                </div>
+
+                <button className="plan-btn primary">
+                  <span>Começar Agora</span>
+                  <FaChevronRight />
+                </button>
+              </div>
+
+              {/* Empresarial */}
+              <div className="plan-card">
+                <div className="recommended-badge">
+                  <FaStar />
+                  <span>Recomendado</span>
+                </div>
+
+                <div className="plan-header">
+                  <h3>{plansData.empresarial.name}</h3>
+                  <div className="plan-price">
+                    <span className="currency">R$</span>
+                    <span className="amount">
+                      {billingCycle === 'monthly'
+                        ? plansData.empresarial.monthlyPrice
+                        : Math.round(plansData.empresarial.yearlyPrice / 12)
+                      }
+                    </span>
+                    <span className="period">/{billingCycle === 'monthly' ? 'mês' : 'mês'}</span>
+                    {billingCycle === 'yearly' && (
+                      <div className="yearly-total">
+                        <span className="plan-total">Total anual: R$ {plansData.empresarial.yearlyPrice}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="plan-description">{plansData.empresarial.description}</p>
+                </div>
+
+                <div className="plan-features">
+                  {plansData.empresarial.features.map((feature, index) => (
+                    <div key={index} className="feature-item">
+                      <FaCheck className="feature-icon" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button className="plan-btn">
+                  <span>Começar Agora</span>
+                  <FaChevronRight />
+                </button>
+              </div>
             </div>
-            <div className="plans-note">
-              Todos os planos incluem atualizações gratuitas e suporte básico.
+
+            {/* Pacotes de Tokens */}
+            <div className="tokens-section">
+              <div className="tokens-header">
+                <h3>Pacotes de Tokens</h3>
+                <p>Recarregue seus créditos de IA para otimização contínua</p>
+              </div>
+
+              <div className="tokens-grid">
+                {/* Starter Pack */}
+                <div className="token-card">
+                  <div className="token-header">
+                    <div className="token-icon">
+                      <FaBolt />
+                    </div>
+                    <h4>Starter Pack</h4>
+                  </div>
+
+                  <div className="token-amount">
+                    <span className="amount">1.000</span>
+                    <span className="unit">tokens</span>
+                  </div>
+
+                  <div className="token-price">
+                    <span className="price">R$ 49</span>
+                    <span className="per-token">4,9¢/token</span>
+                  </div>
+
+                  <div className="token-features">
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Otimização básica</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Relatórios simples</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Validade: 6 meses</span>
+                    </div>
+                  </div>
+
+                  <button className="token-btn">
+                    <span>Comprar</span>
+                  </button>
+                </div>
+
+                {/* Professional Pack */}
+                <div className="token-card popular">
+                  <div className="popular-badge">
+                    <FaCrown />
+                    <span>Mais Vendido</span>
+                  </div>
+
+                  <div className="token-header">
+                    <div className="token-icon">
+                      <FaRocket />
+                    </div>
+                    <h4>Professional Pack</h4>
+                  </div>
+
+                  <div className="token-amount">
+                    <span className="amount">5.000</span>
+                    <span className="unit">tokens</span>
+                  </div>
+
+                  <div className="token-price">
+                    <span className="price">R$ 199</span>
+                    <span className="per-token">4,0¢/token</span>
+                    <span className="savings">Economia de 18%</span>
+                  </div>
+
+                  <div className="token-features">
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Otimização avançada</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>IA preditiva</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Relatórios detalhados</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Validade: 12 meses</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Suporte prioritário</span>
+                    </div>
+                  </div>
+
+                  <button className="token-btn primary">
+                    <span>Comprar</span>
+                  </button>
+                </div>
+
+                {/* Enterprise Pack */}
+                <div className="token-card">
+                  <div className="token-header">
+                    <div className="token-icon">
+                      <FaBuilding />
+                    </div>
+                    <h4>Enterprise Pack</h4>
+                  </div>
+
+                  <div className="token-amount">
+                    <span className="amount">25.000</span>
+                    <span className="unit">tokens</span>
+                  </div>
+
+                  <div className="token-price">
+                    <span className="price">R$ 799</span>
+                    <span className="per-token">3,2¢/token</span>
+                    <span className="savings">Economia de 35%</span>
+                  </div>
+
+                  <div className="token-features">
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Todos os recursos premium</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>IA avançada customizada</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Consultoria incluída</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Validade: 24 meses</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>Suporte dedicado</span>
+                    </div>
+                    <div className="token-feature">
+                      <FaCheck className="feature-check" />
+                      <span>API ilimitada</span>
+                    </div>
+                  </div>
+
+                  <button className="token-btn">
+                    <span>Comprar</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Token Usage Info */}
+              <div className="token-info">
+                <div className="info-grid">
+                  <div className="info-item">
+                    <FaCalculator className="info-icon" />
+                    <div className="info-content">
+                      <h5>Como Funciona</h5>
+                      <p>Cada otimização de rota consome tokens baseado na complexidade. Tokens não utilizados expiram conforme validade do pacote.</p>
+                    </div>
+                  </div>
+
+                  <div className="info-item">
+                    <FaSync className="info-icon" />
+                    <div className="info-content">
+                      <h5>Recarga Automática</h5>
+                      <p>Configure recargas automáticas quando seus tokens estiverem acabando. Nunca fique sem créditos para otimização.</p>
+                    </div>
+                  </div>
+
+                  <div className="info-item">
+                    <FaShieldAlt className="info-icon" />
+                    <div className="info-content">
+                      <h5>Tokens Seguros</h5>
+                      <p>Seus tokens são criptografados e armazenados com segurança. Monitoramento 24/7 contra fraudes.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ dos Planos */}
+            <div className="plans-faq">
+              <h3>Perguntas Frequentes sobre Planos</h3>
+              <div className="faq-items">
+                <div className="faq-item">
+                  <h4>Posso mudar de plano a qualquer momento?</h4>
+                  <p>Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As mudanças entram em vigor no próximo ciclo de cobrança.</p>
+                </div>
+                <div className="faq-item">
+                  <h4>Existe período de teste?</h4>
+                  <p>Oferecemos 30 dias de teste grátis no plano Profissional. Para outros planos, entre em contato conosco.</p>
+                </div>
+                <div className="faq-item">
+                  <h4>Como funciona o suporte?</h4>
+                  <p>O suporte varia por plano: email no Essencial, prioritário 24/7 no Profissional, e dedicado no Empresarial.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Contato Section */}
-      <section id="contact" className="transita-contact-section">
+
+
+{/* Quem Usa, Aprova Section */}
+      <section id="testimonials" className="testimonials-section">
         <div className="container">
           <div className="section-header">
-            <PremiumBadge text="FALE CONOSCO" color="blue" />
-            <h2 className="section-title">
-              Estamos <span className="gradient-text">Prontos para Ajudar</span>
+            <PremiumBadge text="QUEM USA, APROVA" color="green" />
+            <h2 className="section-title gradient-text">
+              Confiança de Quem Decide
+            </h2>
+            <p className="section-description">
+              Empresas líderes que transformaram suas operações logísticas com a Transita.AI
+            </p>
+          </div>
+
+          <div className="testimonials-content">
+            {/* Statistics */}
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-number"><Counter end={524} duration={1600} decimals={0} suffix="+" /></div>
+                <div className="stat-label">Empresas Atendidas</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number"><Counter end={98.7} duration={1600} decimals={1} suffix="%" /></div>
+                <div className="stat-label">Satisfação</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number"><Counter end={5} duration={1600} decimals={0} suffix="+" /></div>
+                <div className="stat-label">Anos no Mercado</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number"><Counter end={96} duration={1600} decimals={0} suffix="%" /></div>
+                <div className="stat-label">Retenção de Clientes</div>
+              </div>
+            </div>
+
+            {/* Company Logos */}
+            <div className="companies-section">
+              <h3>Confiado por líderes do mercado</h3>
+              <div className="companies-grid">
+                <div className="company-logo">
+                  <div className="logo-placeholder">AMBEV</div>
+                  <span>Bebidas</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">VALE</div>
+                  <span>Mineração</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">AMZN</div>
+                  <span>E-commerce</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">MB</div>
+                  <span>Automotivo</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">NEST</div>
+                  <span>Alimentos</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">ULVR</div>
+                  <span>Consumer Goods</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">BRF</div>
+                  <span>Alimentos</span>
+                </div>
+                <div className="company-logo">
+                  <div className="logo-placeholder">JBS</div>
+                  <span>Alimentos</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonials */}
+            <div className="testimonials-grid">
+              <div className="testimonial-card">
+                <div className="testimonial-quote">
+                  "Reduzimos 32% dos custos operacionais em apenas 3 meses. A IA identificou rotas 40% mais eficientes."
+                </div>
+
+                {/* metric cards removidos conforme solicitado */}
+
+                <div className="testimonial-author">
+                  <div className="author-avatar">
+                    <span>TE</span>
+                  </div>
+                  <div className="author-info">
+                    <div className="author-name">Carlos Lima</div>
+                    <div className="author-role">Diretor Logístico</div>
+                    <div className="author-company">Transportes Express</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="testimonial-card">
+                <div className="testimonial-quote">
+                  "A implementação foi surpreendentemente rápida. Em 2 semanas já tínhamos visibilidade completa da frota."
+                </div>
+
+
+                <div className="testimonial-author">
+                  <div className="author-avatar">
+                    <span>LD</span>
+                  </div>
+                  <div className="author-info">
+                    <div className="author-name">Ana Silva</div>
+                    <div className="author-role">Gerente de Operações</div>
+                    <div className="author-company">LogiDistribuição</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="testimonial-card">
+                <div className="testimonial-quote">
+                  "ROI impressionante. Recuperamos o investimento em 45 dias e desde então economizamos R$ 180 mil mensalmente."
+                </div>
+
+               
+
+                <div className="testimonial-author">
+                  <div className="author-avatar">
+                    <span>TC</span>
+                  </div>
+                  <div className="author-info">
+                    <div className="author-name">Roberto Santos</div>
+                    <div className="author-role">CEO</div>
+                    <div className="author-company">Transporte Cardoso</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Fale Conosco Section */}
+      <section id="contact" className="contact-section">
+        <div className="container">
+          <div className="section-header">
+            <PremiumBadge text="FALE CONOSCO" color="green" />
+            <h2 className="section-title gradient-text">
+              Estamos Prontos para Ajudar
             </h2>
             <p className="section-description">
               Converse com nossos especialistas e transforme sua operação logística hoje mesmo.
             </p>
           </div>
-          
+
           <div className="contact-content">
-            <div className="contact-channels">
-              <h3 className="contact-subtitle">Canais de Atendimento</h3>
-              <p className="contact-description">
-                Escolha a melhor forma de entrar em contato com nossa equipe especializada
-              </p>
-              
-              <div className="channels-grid">
-                {contactChannels.map((channel, index) => (
-                  <ContactChannel
-                    key={index}
-                    icon={channel.icon}
-                    title={channel.title}
-                    description={channel.description}
-                    responseTime={channel.responseTime}
-                    availability={channel.availability}
-                    status={channel.status}
-                    actionText={channel.actionText}
-                    actionIcon={channel.actionIcon}
-                    color={channel.color}
-                  />
-                ))}
+            {/* Contact Form */}
+            <div className="contact-form-container">
+              <div className="form-header">
+                <h3>Envie uma Mensagem</h3>
+                <p>Preencha o formulário abaixo e nossa equipe entrará em contato em até 2 horas úteis.</p>
               </div>
-            </div>
-            
-            <div className="contact-form-section">
-              <div className="contact-form-wrapper">
-                <h3 className="contact-subtitle">Envie uma Mensagem</h3>
-                <p className="form-description">
-                  Preencha o formulário abaixo e nossa equipe entrará em contato em até 2 horas úteis.
-                </p>
-                
-                <form className="transita-form">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="name">
-                        <FaUserCog />
-                        <span>Nome Completo *</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        id="name" 
-                        placeholder="Digite seu nome completo" 
-                        className="form-input" 
-                        required 
-                      />
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="email">
-                        <FaEnvelope />
-                        <span>Email *</span>
-                      </label>
-                      <input 
-                        type="email" 
-                        id="email" 
-                        placeholder="seu@email.com" 
-                        className="form-input" 
-                        required 
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="company">
-                        <FaBuilding />
-                        <span>Empresa</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        id="company" 
-                        placeholder="Nome da sua empresa" 
-                        className="form-input" 
-                      />
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="phone">
-                        <FaPhone />
-                        <span>Telefone *</span>
-                      </label>
-                      <input 
-                        type="tel" 
-                        id="phone" 
-                        placeholder="(11) 99999-9999" 
-                        className="form-input" 
-                        required 
-                      />
-                    </div>
-                  </div>
-                  
+
+              <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
+                <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="subject">
-                      <FaFilter />
-                      <span>Assunto *</span>
-                    </label>
-                    <select id="subject" className="form-select" required>
-                      <option value="">Selecione o assunto</option>
-                      <option value="suporte">Suporte Técnico</option>
-                      <option value="comercial">Comercial</option>
-                      <option value="financeiro">Financeiro</option>
-                      <option value="emergencia">Emergência</option>
-                      <option value="parceria">Parceria</option>
-                    </select>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="message">
-                      <FaComments />
-                      <span>Mensagem *</span>
-                    </label>
-                    <textarea 
-                      id="message" 
-                      placeholder="Descreva sua dúvida, problema ou solicitação..." 
-                      rows="4" 
-                      className="form-textarea" 
-                      required 
+                    <label htmlFor="name">Nome Completo *</label>
+                    <input
+                      type="text"
+                      id="name"
+                      placeholder="Digite seu nome completo"
+                      required
                     />
                   </div>
-                  
-                  <div className="form-footer">
-                    <div className="form-notice">
-                      <FaShieldAlt />
-                      <span>Seus dados estão seguros conosco. Não compartilhamos informações com terceiros.</span>
-                    </div>
-                    
-                    <button type="submit" className="transita-btn transita-btn-primary transita-btn-xl">
-                      <span>Enviar Mensagem</span>
-                      <FaArrowUp />
-                    </button>
+                  <div className="form-group">
+                    <label htmlFor="email">Email *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      placeholder="seu@email.com"
+                      required
+                    />
                   </div>
-                </form>
-              </div>
-              
-              <div className="contact-info">
-                <div className="info-section">
-                  <h4>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="company">Empresa</label>
+                    <input
+                      type="text"
+                      id="company"
+                      placeholder="Nome da sua empresa"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="phone">Telefone *</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      placeholder="(11) 99999-9999"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subject">Assunto *</label>
+                  <select id="subject" required>
+                    <option value="">Selecione o assunto</option>
+                    <option value="orcamento">Orçamento</option>
+                    <option value="suporte">Suporte Técnico</option>
+                    <option value="demonstracao">Demonstração</option>
+                    <option value="parceria">Parceria</option>
+                    <option value="outros">Outros</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="message">Mensagem *</label>
+                  <textarea
+                    id="message"
+                    placeholder="Descreva sua dúvida, problema ou solicitação..."
+                    rows="5"
+                    required
+                  ></textarea>
+                </div>
+
+                <div className="form-footer">
+                  <p className="privacy-notice">
+                    <FaLock className="privacy-icon" />
+                    Seus dados estão seguros conosco. Não compartilhamos informações com terceiros.
+                  </p>
+                  <button type="submit" className="transita-btn transita-btn-primary transita-btn-xl">
+                    <span>Enviar Mensagem</span>
+                    <FaPaperPlane />
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Contact Info */}
+            <div className="contact-info">
+              {/* Units */}
+              <div className="contact-units">
+                <h3>Nossas Unidades</h3>
+
+                <div className="unit-card">
+                  <div className="unit-header">
+                    <div className="unit-badge">HQ</div>
+                    <h4>São Paulo - Matriz</h4>
+                  </div>
+                  <div className="unit-address">
                     <FaMapMarkerAlt />
-                    <span>Nossas Unidades</span>
-                  </h4>
-                  
-                  <div className="office-card">
-                    <div className="office-header">
-                      <h5>São Paulo - Matriz</h5>
-                      <PremiumBadge text="HQ" color="blue" />
-                    </div>
-                    <p>Av. Paulista, 1000 - 10º andar</p>
-                    <p>Bela Vista, São Paulo - SP</p>
-                    <div className="office-contact">
-                      <FaPhone /> (11) 3333-4444
-                    </div>
-                    <div className="office-contact">
-                      <FaEnvelope /> sp@transita.ai
-                    </div>
-                    <div className="office-hours">
-                      <FaClock /> Seg-Sex: 8h às 18h
-                    </div>
+                    <span>Av. Paulista, 1000 - 10º andar<br />Bela Vista, São Paulo - SP</span>
                   </div>
-                  
-                  <div className="office-card">
-                    <div className="office-header">
-                      <h5>Goiás - Anápolis</h5>
-                      <PremiumBadge text="FILIAL" color="green" />
+                  <div className="unit-contact">
+                    <div className="contact-item">
+                      <FaPhone />
+                      <span>(11) 3333-4444</span>
                     </div>
-                    <p>Av. Brasil, 500 - Centro</p>
-                    <p>Anápolis, Goiás - GO</p>
-                    <div className="office-contact">
-                      <FaPhone /> (62) 2222-3333
+                    <div className="contact-item">
+                      <FaEnvelope />
+                      <span>sp@transita.ai</span>
                     </div>
-                    <div className="office-contact">
-                      <FaEnvelope /> go@transita.ai
-                    </div>
-                    <div className="office-hours">
-                      <FaClock /> Seg-Sex: 8h às 18h
+                    <div className="contact-item">
+                      <FaClock />
+                      <span>Seg-Sex: 8h às 18h</span>
                     </div>
                   </div>
                 </div>
-                
-                <div className="info-section">
-                  <h4>
-                    <FaUsers />
-                    <span>Conecte-se Conosco</span>
-                  </h4>
-                  
-                  <div className="social-links">
-                    <a href="#" className="social-link">
-                      <FaLinkedin />
-                      <span>LinkedIn</span>
-                    </a>
-                    <a href="#" className="social-link">
-                      <FaInstagram />
-                      <span>Instagram</span>
-                    </a>
-                    <a href="#" className="social-link">
-                      <FaFacebook />
-                      <span>Facebook</span>
-                    </a>
-                    <a href="#" className="social-link">
-                      <FaWhatsapp />
-                      <span>WhatsApp</span>
-                    </a>
+
+                <div className="unit-card">
+                  <div className="unit-header">
+                    <div className="unit-badge">FILIAL</div>
+                    <h4>Goiás - Anápolis</h4>
                   </div>
+                  <div className="unit-address">
+                    <FaMapMarkerAlt />
+                    <span>Av. Brasil, 500 - Centro<br />Anápolis, Goiás - GO</span>
+                  </div>
+                  <div className="unit-contact">
+                    <div className="contact-item">
+                      <FaPhone />
+                      <span>(62) 2222-3333</span>
+                    </div>
+                    <div className="contact-item">
+                      <FaEnvelope />
+                      <span>go@transita.ai</span>
+                    </div>
+                    <div className="contact-item">
+                      <FaClock />
+                      <span>Seg-Sex: 8h às 18h</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Links */}
+              <div className="contact-social">
+                <h3>Conecte-se Conosco</h3>
+                <div className="social-links">
+                  <a href="#" className="social-link linkedin">
+                    <FaLinkedin />
+                    <span>LinkedIn</span>
+                  </a>
+                  <a href="#" className="social-link instagram">
+                    <FaInstagram />
+                    <span>Instagram</span>
+                  </a>
+                  <a href="#" className="social-link facebook">
+                    <FaFacebook />
+                    <span>Facebook</span>
+                  </a>
+                  <a href="#" className="social-link whatsapp">
+                    <FaWhatsapp />
+                    <span>WhatsApp</span>
+                  </a>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+
+
+      {/* Modal de Contato */}
+      <Transition appear show={isModalOpen} as={Fragment}>
+        <Dialog as="div" className="modal-overlay" onClose={() => setIsModalOpen(false)}>
+          <div className="modal-container">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="modal-backdrop" onClick={() => setIsModalOpen(false)} />
+            </Transition.Child>
+
+            <div className="modal-wrapper">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="modal-panel">
+                  <div className="modal-header">
+                    <Dialog.Title as="h3" className="modal-title">
+                      Agendar Demonstração
+                    </Dialog.Title>
+                    <button
+                      type="button"
+                      className="modal-close"
+                      onClick={() => setIsModalOpen(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="modal-content">
+                    <p>Agende uma demonstração personalizada com nossos especialistas.</p>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+       {/* FAQ Section */}
+      <section id="faq" className="faq-section">
+        <div className="container">
+          <div className="section-header">
+            <PremiumBadge text="PERGUNTAS FREQUENTES" color="orange" />
+            <h2 className="section-title gradient-text">
+              Tire suas Dúvidas
+            </h2>
+            <p className="section-description">
+              Respostas para as principais perguntas sobre nossa plataforma
+            </p>
+          </div>
+          
+          <div className="faq-content">
+            <div className="faq-grid">
+              <div className="faq-intro">
+                <h3>Como podemos ajudar?</h3>
+                <p>Selecionamos as perguntas mais frequentes de nossos clientes para facilitar seu entendimento.</p>
+                
+                <button 
+                  className="transita-btn transita-btn-primary transita-btn-xl"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <span>Falar com Especialista</span>
+                  <FaComments />
+                </button>
+              </div>
+              
+              <div className="faq-accordion">
+                <div className="transita-accordion">
+                  {faqItems.map((item, index) => (
+                    <div key={index} className="accordion-item">
+                      <button className="accordion-button">
+                        <div className="accordion-header">
+                          <div className="accordion-icon">{item.icon}</div>
+                          <span className="accordion-title">{item.title}</span>
+                        </div>
+                        <FaChevronDown className="accordion-chevron" />
+                      </button>
+                      <div className="accordion-panel">
+                        <p>{item.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };
