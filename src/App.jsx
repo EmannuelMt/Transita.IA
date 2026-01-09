@@ -121,7 +121,7 @@ function AppContent() {
 
               <Route
                 path="/profile/company"
-                element={<ProtectedRoute><CompanyPorofile /></ProtectedRoute>}
+                element={<ProtectedRoute><CompanyProfile /></ProtectedRoute>}
               />
 
               <Route
