@@ -28,16 +28,27 @@ export const AuthProvider = ({ children }) => {
   // Verificar token no carregamento
   useEffect(() => {
     const checkAuth = async () => {
-      if (token) {
-        try {
-          const response = await axios.get('http://localhost:3002/api/auth/profile');
-          setUser(response.data);
-        } catch (error) {
-          console.error('Erro ao verificar autenticação:', error);
+      if (!token) {
+        // Sem token, não há nada a verificar
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('[AuthContext] Verificando autenticação com token:', token.substring(0, 20) + '...');
+        const response = await axios.get('http://localhost:3002/api/auth/profile');
+        console.log('[AuthContext] ✅ Autenticação válida, usuário:', response.data.email);
+        setUser(response.data);
+      } catch (error) {
+        console.error('[AuthContext] ❌ Erro ao verificar autenticação:', error.response?.status, error.message);
+        // Se erro de autenticação, limpar token e sair do estado autenticado
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          console.log('[AuthContext] Token inválido ou expirado, fazendo logout');
           logout();
         }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();

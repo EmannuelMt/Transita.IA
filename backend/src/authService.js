@@ -1,93 +1,293 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { users, companies, employees } = require('../userService');
+const { v4: uuidv4 } = require('uuid');
+const validationService = require('./validationService');
+const inviteTokenService = require('./inviteTokenService');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'transitaai-secret-key-2024';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// Armazenamento em memória (em produção, usar banco real)
+let users = [];
+let companies = [];
+let employees = [];
+let companyAdmins = [];
 
 class AuthService {
-  // Gerar hash da senha
+  /**
+   * Hash de senha
+   */
   async hashPassword(password) {
     return await bcrypt.hash(password, 12);
   }
 
-  // Verificar senha
+  /**
+   * Verificar senha
+   */
   async verifyPassword(password, hashedPassword) {
     return await bcrypt.compare(password, hashedPassword);
   }
 
-  // Gerar token JWT
+  /**
+   * Gerar JWT token
+   */
   generateToken(user) {
     return jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
-        companyId: user.companyId
+        companyId: user.companyId,
+        employeeId: user.employeeId || null
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: JWT_EXPIRES_IN }
     );
   }
 
-  // Verificar token JWT
+  /**
+   * Verificar JWT token
+   */
   verifyToken(token) {
     try {
       return jwt.verify(token, JWT_SECRET);
     } catch (error) {
-      throw new Error('Token inválido');
+      throw new Error('Token inválido ou expirado');
     }
   }
 
-  // Login
+  /**
+   * Login de usuário (Empresa ou Funcionário)
+   */
   async login(email, password) {
-    const user = users.find(u => u.email === email);
-    if (!user) {
-      throw new Error('Usuário não encontrado');
+    if (!email || !password) {
+      throw new Error('Email e senha são obrigatórios');
     }
 
-    const isValidPassword = await this.verifyPassword(password, user.password);
-    if (!isValidPassword) {
-      throw new Error('Senha incorreta');
+    if (!validationService.validateEmail(email)) {
+      throw new Error('Email inválido');
+    }
+
+    const user = users.find(u => u.email === email);
+    if (!user) {
+      throw new Error('Email ou senha incorretos');
+    }
+
+    if (!user.isActive) {
+      throw new Error('Esta conta foi desativada');
+    }
+
+    const passwordValid = await this.verifyPassword(password, user.password);
+    if (!passwordValid) {
+      throw new Error('Email ou senha incorretos');
     }
 
     const token = this.generateToken(user);
-    return { user, token };
+
+    // Montar resposta com dados completos
+    const response = {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId
+      },
+      token,
+      expiresIn: JWT_EXPIRES_IN
+    };
+
+    if (user.role === 'COMPANY') {
+      const company = companies.find(c => c.id === user.companyId);
+      if (company) {
+        response.company = {
+          id: company.id,
+          name: company.name,
+          cnpj: company.cnpj,
+          city: company.city,
+          state: company.state
+        };
+      }
+    } else if (user.role === 'EMPLOYEE') {
+      const employee = employees.find(e => e.id === user.employeeId);
+      if (employee) {
+        response.employee = {
+          id: employee.id,
+          name: employee.name,
+          position: employee.position,
+          companyId: employee.companyId
+        };
+      }
+
+      const company = companies.find(c => c.id === user.companyId);
+      if (company) {
+        response.company = {
+          id: company.id,
+          name: company.name
+        };
+      }
+    }
+
+    return response;
   }
 
-  // Registrar empresa
+  /**
+   * Registrar empresa com validação de CNPJ
+   */
   async registerCompany(companyData) {
-    const { name, email, password, cnpj, phone, address } = companyData;
+    const {
+      name,
+      email,
+      password,
+      cnpj,
+      cep,
+      phone
+    } = companyData;
+
+    // Validações
+    if (!name || !email || !password || !cnpj) {
+      throw new Error('Nome, email, senha e CNPJ são obrigatórios');
+    }
+
+    if (!validationService.validateEmail(email)) {
+      throw new Error('Email inválido');
+    }
 
     // Verificar se email já existe
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
+    if (users.find(u => u.email === email)) {
       throw new Error('Email já cadastrado');
     }
 
-    // Verificar se CNPJ já existe
-    const existingCompany = companies.find(c => c.cnpj === cnpj);
-    if (existingCompany) {
-      throw new Error('CNPJ já cadastrado');
+    // Validar força da senha
+    const passwordValidation = validationService.validatePassword(password);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message);
     }
 
+    // Verificação rápida: CNPJ já existe no sistema (antes de chamar BrasilAPI)
+    const cleanInputCnpj = cnpj.replace(/\D/g, '');
+    if (companies.find(c => {
+      const existingClean = c.cnpj.replace(/\D/g, '');
+      return existingClean === cleanInputCnpj;
+    })) {
+      console.error(`[Register Company] ❌ CNPJ ${cleanInputCnpj} já está cadastrado`);
+      throw new Error('Este CNPJ já está cadastrado no sistema. Não é permitido mais de uma conta por CNPJ.');
+    }
+
+    // ==========================================
+    // PASSO 2: CHAMAR A BRASILAPI
+    // ==========================================
+    console.log(`[CNPJ Validation] Iniciando validação para CNPJ: ${cnpj}`);
+    
+    let cnpjData;
+    try {
+      cnpjData = await validationService.validateCNPJ(cnpj);
+      console.log(`[CNPJ Validation] ✅ CNPJ válido na Receita Federal`);
+      console.log(`[CNPJ Validation] Empresa: ${cnpjData.name}`);
+    } catch (error) {
+      console.error(`[CNPJ Validation] ❌ Erro: ${error.message}`);
+      throw new Error(`Validação de CNPJ falhou: ${error.message}`);
+    }
+
+    // ==========================================
+    // PASSO 3: VERIFICAR SE TEM 6+ MESES
+    // ==========================================
+    console.log(`[CNPJ Validation] Verificando se empresa tem 6+ meses...`);
+    const createdDate = new Date(cnpjData.founded_at);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    console.log(`[CNPJ Validation] Data de fundação: ${createdDate.toLocaleDateString('pt-BR')}`);
+    console.log(`[CNPJ Validation] Data limite (6 meses atrás): ${sixMonthsAgo.toLocaleDateString('pt-BR')}`);
+    
+    if (createdDate > sixMonthsAgo) {
+      console.error(`[CNPJ Validation] ❌ Empresa com menos de 6 meses`);
+      throw new Error('Empresas com menos de 6 meses de existência não são aceitas');
+    }
+    console.log(`[CNPJ Validation] ✅ Empresa aprovada - tem mais de 6 meses`);
+
+    // Verificar se CNPJ já está cadastrado
+    // Comparar tanto com CNPJ formatado quanto com CNPJ limpo
+    const cleanCnpj = cnpjData.cnpj.replace(/\D/g, '');
+    
+    if (companies.find(c => {
+      const existingClean = c.cnpj.replace(/\D/g, '');
+      return existingClean === cleanCnpj || existingClean === cleanInputCnpj;
+    })) {
+      console.error(`[CNPJ Validation] ❌ CNPJ ${cleanCnpj} já está cadastrado`);
+      throw new Error('Este CNPJ já está cadastrado no sistema. Não é permitido mais de uma conta por CNPJ.');
+    }
+
+    // Verificar histórico de trocas de CNPJ (se disponível no payload da API)
+    try {
+      const raw = cnpjData.raw;
+      if (raw && raw.previous_cnpjs && Array.isArray(raw.previous_cnpjs) && raw.previous_cnpjs.length > 3) {
+        throw new Error('Empresa com histórico excessivo de troca de CNPJ não é aceita');
+      }
+    } catch (e) {
+      // se não houver dados de histórico, não bloqueia; apenas segue
+    }
+
+    // Se CEP foi fornecido, validar e prefillar dados
+    let addressData = {
+      city: cnpjData.city,
+      state: cnpjData.state,
+      street: cnpjData.street,
+      neighborhood: cnpjData.neighborhood,
+      zip: cnpjData.zip,
+      number: cnpjData.number || ''
+    };
+
+    if (cep) {
+      try {
+        console.log(`[CEP Validation] Validando CEP: ${cep}`);
+        const cepData = await validationService.validateCEP(cep);
+        console.log(`[CEP Validation] ✅ CEP válido`);
+        addressData = {
+          ...addressData,
+          ...cepData
+        };
+      } catch (error) {
+        console.warn(`[CEP Validation] ⚠️ Aviso: ${error.message}`);
+      }
+    }
+
+    // ==========================================
+    // PASSO 4: RETORNAR OS DADOS COMPLETOS
+    // ==========================================
+    console.log(`[CNPJ Validation] Preparando resposta com dados completos...`);
+    
     // Hash da senha
     const hashedPassword = await this.hashPassword(password);
 
-    // Criar empresa
-    const companyId = `comp_${Date.now()}`;
+    // Criar IDs
+    const companyId = `comp_${uuidv4()}`;
+    const userId = `user_${uuidv4()}`;
+
+    // Criar empresa com dados completos da BrasilAPI
     const company = {
       id: companyId,
-      name,
+      name: name || cnpjData.name,
+      cnpj: cnpjData.cnpj,
+      legalName: cnpjData.legalName,
+      description: cnpjData.description || '',
       email,
-      cnpj,
-      phone,
-      address,
+      phone: phone || '',
+      city: addressData.city,
+      state: addressData.state,
+      street: addressData.street,
+      neighborhood: addressData.neighborhood,
+      zip: addressData.zip,
+      number: addressData.number,
+      founded_at: cnpjData.founded_at,
+      status: cnpjData.status,
+      cnae: cnpjData.cnae || '',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      status_system: 'ACTIVE',
+      plan: 'BASIC'
     };
 
     // Criar usuário
-    const userId = `user_${Date.now()}`;
     const user = {
       id: userId,
       email,
@@ -95,25 +295,87 @@ class AuthService {
       role: 'COMPANY',
       companyId,
       isActive: true,
+      isAdmin: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Salvar no "banco"
+    // Salvar em banco de dados
     companies.push(company);
     users.push(user);
+    companyAdmins.push({
+      userId,
+      companyId,
+      role: 'ADMIN',
+      createdAt: new Date().toISOString()
+    });
 
+    // Gerar token
     const token = this.generateToken(user);
-    return { user, company, token };
+
+    console.log(`[CNPJ Validation] ✅ Empresa registrada com sucesso!`);
+    console.log(`[CNPJ Validation] Company ID: ${companyId}`);
+    console.log(`[CNPJ Validation] User ID: ${userId}`);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId
+      },
+      company: {
+        id: company.id,
+        name: company.name,
+        cnpj: company.cnpj,
+        city: company.city,
+        state: company.state
+      },
+      token,
+      expiresIn: JWT_EXPIRES_IN,
+      message: 'Empresa registrada com sucesso'
+    };
   }
 
-  // Registrar funcionário
-  async registerEmployee(employeeData, companyId) {
-    const { name, email, password, phone, position, department } = employeeData;
+  /**
+   * Registrar funcionário com validação de token
+   */
+  async registerEmployee(employeeData, inviteToken) {
+    const {
+      name,
+      email,
+      password,
+      phone,
+      position
+    } = employeeData;
+
+    // Validações
+    if (!name || !email || !password || !inviteToken) {
+      throw new Error('Nome, email, senha e token de convite são obrigatórios');
+    }
+
+    if (!validationService.validateEmail(email)) {
+      throw new Error('Email inválido');
+    }
+
+    // Verificar força da senha
+    const passwordValidation = validationService.validatePassword(password);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message);
+    }
+
+    // Validar token de convite
+    let tokenData;
+    try {
+      tokenData = inviteTokenService.validateToken(inviteToken);
+    } catch (error) {
+      throw new Error(`Token inválido: ${error.message}`);
+    }
+
+    const { companyId } = tokenData;
 
     // Verificar se email já existe
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
+    if (users.find(u => u.email === email)) {
       throw new Error('Email já cadastrado');
     }
 
@@ -126,23 +388,25 @@ class AuthService {
     // Hash da senha
     const hashedPassword = await this.hashPassword(password);
 
+    // Criar IDs
+    const employeeId = `emp_${uuidv4()}`;
+    const userId = `user_${uuidv4()}`;
+
     // Criar funcionário
-    const employeeId = `emp_${Date.now()}`;
     const employee = {
       id: employeeId,
       name,
       email,
-      phone,
-      position,
-      department,
+      phone: phone || '',
+      position: position || '',
       companyId,
+      inviteTokenId: inviteToken,
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     // Criar usuário
-    const userId = `user_${Date.now()}`;
     const user = {
       id: userId,
       email,
@@ -151,37 +415,213 @@ class AuthService {
       companyId,
       employeeId,
       isActive: true,
+      isAdmin: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Salvar no "banco"
+    // Marcar token como usado
+    try {
+      inviteTokenService.useToken(inviteToken, userId, email);
+    } catch (error) {
+      throw new Error(`Erro ao validar token: ${error.message}`);
+    }
+
+    // Salvar em banco de dados
     employees.push(employee);
     users.push(user);
 
-    const token = this.generateToken(user);
-    return { user, employee, token };
+    // Gerar token
+    const authToken = this.generateToken(user);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId
+      },
+      employee: {
+        id: employee.id,
+        name: employee.name,
+        position: employee.position,
+        companyId: employee.companyId
+      },
+      company: {
+        id: company.id,
+        name: company.name
+      },
+      token: authToken,
+      expiresIn: JWT_EXPIRES_IN,
+      message: 'Funcionário registrado com sucesso'
+    };
   }
 
-  // Middleware para verificar autenticação
+  /**
+   * Obter perfil do usuário autenticado
+   */
+  getProfile(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    const profile = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+      isActive: user.isActive
+    };
+
+    if (user.role === 'COMPANY') {
+      const company = companies.find(c => c.id === user.companyId);
+      if (company) {
+        profile.company = company;
+      }
+    } else if (user.role === 'EMPLOYEE') {
+      const employee = employees.find(e => e.id === user.employeeId);
+      if (employee) {
+        profile.employee = employee;
+      }
+
+      const company = companies.find(c => c.id === user.companyId);
+      if (company) {
+        profile.company = {
+          id: company.id,
+          name: company.name,
+          cnpj: company.cnpj
+        };
+      }
+    }
+
+    return profile;
+  }
+
+  /**
+   * Atualizar perfil do usuário
+   */
+  async updateProfile(userId, updates) {
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    if (user.role === 'COMPANY') {
+      const company = companies.find(c => c.id === user.companyId);
+      if (!company) throw new Error('Empresa não encontrada');
+
+      const { name, phone } = updates;
+      if (name) company.name = name;
+      if (phone) company.phone = phone;
+      company.updatedAt = new Date().toISOString();
+    } else if (user.role === 'EMPLOYEE') {
+      const employee = employees.find(e => e.id === user.employeeId);
+      if (!employee) throw new Error('Funcionário não encontrado');
+
+      const { name, phone, position } = updates;
+      if (name) employee.name = name;
+      if (phone) employee.phone = phone;
+      if (position) employee.position = position;
+      employee.updatedAt = new Date().toISOString();
+    }
+
+    user.updatedAt = new Date().toISOString();
+
+    return this.getProfile(userId);
+  }
+
+  /**
+   * Mudar senha
+   */
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    const passwordValid = await this.verifyPassword(currentPassword, user.password);
+    if (!passwordValid) {
+      throw new Error('Senha atual incorreta');
+    }
+
+    const passwordValidation = validationService.validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.message);
+    }
+
+    const hashedPassword = await this.hashPassword(newPassword);
+    user.password = hashedPassword;
+    user.updatedAt = new Date().toISOString();
+
+    return { message: 'Senha alterada com sucesso' };
+  }
+
+  /**
+   * Gerar token de convite (apenas admin da empresa)
+   */
+  generateInviteToken(companyId, adminUserId, expiresInDays = 30) {
+    const adminCheck = companyAdmins.find(
+      a => a.userId === adminUserId && a.companyId === companyId && a.role === 'ADMIN'
+    );
+
+    if (!adminCheck) {
+      throw new Error('Apenas administradores da empresa podem gerar tokens');
+    }
+
+    return inviteTokenService.generateToken(companyId, adminUserId, expiresInDays);
+  }
+
+  /**
+   * Listar tokens de convite da empresa (apenas admin)
+   */
+  listInviteTokens(companyId, adminUserId) {
+    const adminCheck = companyAdmins.find(
+      a => a.userId === adminUserId && a.companyId === companyId && a.role === 'ADMIN'
+    );
+
+    if (!adminCheck) {
+      throw new Error('Apenas administradores podem listar tokens');
+    }
+
+    return inviteTokenService.listCompanyTokens(companyId, {
+      includeUsed: true,
+      includeExpired: false
+    });
+  }
+
+  /**
+   * Middleware para autenticar token
+   */
   authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({ error: 'Token não fornecido' });
+      console.log('[Auth] Token não fornecido em:', req.path);
+      return res.status(401).json({ 
+        error: 'Token não fornecido',
+        code: 'NO_TOKEN'
+      });
     }
 
     try {
       const decoded = this.verifyToken(token);
       req.user = decoded;
+      console.log('[Auth] Token validado para usuário:', decoded.userId);
       next();
     } catch (error) {
-      return res.status(403).json({ error: 'Token inválido' });
+      console.log('[Auth] Erro ao validar token:', error.message);
+      return res.status(401).json({ 
+        error: 'Token inválido ou expirado',
+        code: 'INVALID_TOKEN'
+      });
     }
   }
 
-  // Middleware para verificar permissões por role
+  /**
+   * Middleware para autorizar por role
+   */
   authorizeRoles(...roles) {
     return (req, res, next) => {
       if (!req.user) {

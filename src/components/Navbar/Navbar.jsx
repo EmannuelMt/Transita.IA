@@ -59,6 +59,7 @@ const PremiumNavbar = ({ onLogout }) => {
   const navigationItems = [
     { path: '/', label: 'Home', icon: FiHome, description: 'Página inicial do sistema' },
     { path: '/dashboard', label: 'Dashboard', icon: FiBarChart2, description: 'Analytics em tempo real' },
+    { path: '/register-driver', label: 'Registrar Motorista', icon: FiTruck, description: 'Adicionar novo motorista à frota' },
     { path: '/multas', label: 'Multas', icon: FiAlertTriangle, description: 'Gestão de multas', badge: 'NOVO' },
     { path: '/empresa', label: 'Empresa', icon: FiNavigation, description: 'Portal corporativo' },
   ];

@@ -156,30 +156,6 @@ const Notifications = ({ modal = false }) => {
               <FiBell className="notification-bell-icon" />
               <span>Central de Notificações</span>
             </div>
-            <h1 className={`notifications-title ${modal ? 'modal' : ''}`}>Gestão de Alertas</h1>
-            <p className={`notifications-subtitle ${modal ? 'modal' : ''}`}>
-              Gerencie todas as comunicações do sistema de forma inteligente
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="notifications-stats">
-            <div className="stat-item">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">Total</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number stat-unread">{stats.unread}</span>
-              <span className="stat-label">Não lidas</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number stat-critical">{stats.critical}</span>
-              <span className="stat-label">Críticas</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number stat-warning">{stats.warning}</span>
-              <span className="stat-label">Avisos</span>
-            </div>
           </div>
         </header>
 

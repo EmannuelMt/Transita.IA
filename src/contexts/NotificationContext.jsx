@@ -25,12 +25,25 @@ export const NotificationProvider = ({ children }) => {
   // Carregar notificações do backend
   const loadNotifications = useCallback(async () => {
     try {
+      // Verificar se há token (usuário autenticado)
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('Usuário não autenticado. Pulando carregamento de notificações.');
+        setNotifications([]);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       const data = await notificationAPI.getNotifications();
-      setNotifications(data.notifications);
+      setNotifications(data.notifications || []);
     } catch (err) {
-      setError('Erro ao carregar notificações');
+      if (err.message.includes('Não autorizado')) {
+        console.log('Token inválido ou expirado');
+        setNotifications([]);
+      } else {
+        setError('Erro ao carregar notificações');
+      }
       console.error('Erro ao carregar notificações:', err);
     } finally {
       setLoading(false);
@@ -99,7 +112,21 @@ export const NotificationProvider = ({ children }) => {
 
   // Carregar notificações na inicialização
   useEffect(() => {
-    loadNotifications();
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.log('[NotificationContext] Sem token, pulando carregamento de notificações');
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    // Aguardar um pouco para garantir que o localStorage está pronto
+    const timer = setTimeout(() => {
+      loadNotifications();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [loadNotifications]);
 
   // Marcar notificação como lida

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { FiUser, FiHome, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { FiUser, FiHome, FiTrendingUp, FiUsers, FiTruck } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { user, isCompany, isEmployee, logout } = useAuth();
@@ -178,11 +178,27 @@ const Dashboard = () => {
               </button>
 
               {isCompany && (
-                <button className="w-full flex items-center space-x-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left">
+                <button 
+                  onClick={() => navigate('/register-driver')}
+                  className="w-full flex items-center space-x-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
+                >
                   <FiUsers className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-medium text-gray-900">Gerenciar Funcionários</p>
                     <p className="text-sm text-gray-600">Adicionar ou editar colaboradores</p>
+                  </div>
+                </button>
+              )}
+
+              {isCompany && (
+                <button 
+                  onClick={() => navigate('/register-driver')}
+                  className="w-full flex items-center space-x-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left"
+                >
+                  <FiTruck className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">Registrar Motorista</p>
+                    <p className="text-sm text-gray-600">Adicionar novo motorista à frota</p>
                   </div>
                 </button>
               )}

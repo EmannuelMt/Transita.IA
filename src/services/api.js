@@ -5,8 +5,10 @@ const base = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
 export const api = axios.create({
     baseURL: base,
-    timeout: 10000,
-    withCredentials: true, // Enable cookies for CSRF protection
+    timeout: 30000,
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
 
 // Request interceptor for authentication and security headers
@@ -185,3 +187,5 @@ export const secureApi = {
 function validateData(data) {
     // Validação desativada
 }
+
+export default api;

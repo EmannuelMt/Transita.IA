@@ -20,8 +20,17 @@ const io = socketIo(server, {
 
 const PORT = process.env.PORT || 3002;
 
+// Configuração de CORS
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-device-fingerprint', 'x-csrf-token', 'x-request-id'],
+  credentials: false, // JWT no header, não precisa credentials
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Auth Routes

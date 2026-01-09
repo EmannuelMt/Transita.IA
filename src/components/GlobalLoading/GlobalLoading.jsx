@@ -135,7 +135,7 @@ const LoadingScreen = ({ onComplete }) => {
         transition={{ delay: 1 }}
         className="absolute bottom-12 text-center"
       >
-        <p className="text-[9px] text-gray-300 font-semibold uppercase tracking-widest">Powered by Gemini Pro Vision</p>
+        <p className="text-[9px] text-gray-300 font-semibold uppercase tracking-widest">Transita.IA</p>
       </motion.div>
     </motion.div>
   );

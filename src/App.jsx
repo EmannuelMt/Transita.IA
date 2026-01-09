@@ -9,16 +9,16 @@ import NotFound from './pages/NotFound/NotFound.jsx';
 import Search from './pages/Search/Search.jsx';
 import GlobalLoading from './components/GlobalLoading/GlobalLoading.jsx';
 import Dashboard from './pages/dashboard/Dashboard.jsx';
+import UserProfile from './pages/profiles/UserProfile.jsx';
 import CompanyProfile from './pages/profiles/CompanyProfile.jsx';
 import EmployeeProfile from './pages/profiles/EmployeeProfile.jsx';
-import UserProfile from './pages/profiles/UserProfile.jsx';
+import RegisterDriver from './pages/RegisterDriver/RegisterDriver.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import Support from './pages/Support/Support.jsx';
 import Planos from './pages/Planos/Planos.jsx';
 import Settings from './pages/Settings/Settings.jsx';
 import Multas from './pages/Multas/Multas.jsx';
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
-import EmployeeAuth from './components/Auth/EmployeeAuth.jsx';
 import Login from './components/Auth/Login.jsx';
 import Privacy from './pages/Privacy/Privacy.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
@@ -86,15 +86,14 @@ function AppContent() {
             <Routes>
               {/* Rotas Públicas */}
               <Route
-                path="/login"
-                element={<Login initialMode={searchParams.get('mode') || 'login'} />}
+                path="/"
+                element={<Home />}
               />
-
               <Route
-                path="/employee-auth"
-                element={<EmployeeAuth />}
+                path="/login"
+                element={<Login initialMode={searchParams.get('mode') || 'login'} onLogin={handleLogin} />}
               />
-
+              
               <Route
                 path="/support"
                 element={<Support />}
@@ -103,40 +102,8 @@ function AppContent() {
                 path="/planos"
                 element={<Planos />}
               />
-              {/* Rota pública: Home */}
-              <Route
-                path="/"
-                element={
-                  <Home user={user} />
-                }
-              />
 
-              <Route
-                path="/dashboard"
-                element={<Dashboard />}
-              />
-
-              <Route
-                path="/multas"
-                element={<Multas />}
-              />
-
-              <Route
-                path="/profile"
-                element={<UserProfile />}
-              />
-
-              <Route
-                path="/profile/company"
-                element={<CompanyProfile />}
-              />
-
-              <Route
-                path="/profile/employee"
-                element={<EmployeeProfile />}
-              />
-
-              <Route
+                <Route
                 path="/search"
                 element={<Search />}
               />
@@ -145,14 +112,42 @@ function AppContent() {
                 element={<Privacy />}
               />
               
-              <Route  
-                path="/settings"
-                element={<Settings />}
-                  
-                
+          
+              {/* Rotas Protegidas */}
+              <Route
+                path="/profile"
+                element={<ProtectedRoute><UserProfile /></ProtectedRoute>}
               />
 
-              
+              <Route
+                path="/profile/company"
+                element={<ProtectedRoute><CompanyPorofile /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/profile/employee"
+                element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/dashboard"
+                element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/settings"
+                element={<ProtectedRoute><Settings /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/multas"
+                element={<ProtectedRoute><Multas /></ProtectedRoute>}
+              />
+
+              <Route
+                path="/register-driver"
+                element={<ProtectedRoute><RegisterDriver /></ProtectedRoute>}
+              />
               {/* Rota 404 - Página não encontrada */}
               <Route
                 path="*"

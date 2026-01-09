@@ -5,12 +5,12 @@ class NotificationAPI {
     this.baseURL = API_BASE_URL;
   }
 
-  // Headers padrão com autenticação simulada
+  // Headers padrão com autenticação
   getHeaders() {
+    const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
-      // Em produção, incluir token JWT
-      // 'Authorization': `Bearer ${token}`
+      ...(token && { 'Authorization': `Bearer ${token}` })
     };
   }
 
@@ -23,6 +23,9 @@ class NotificationAPI {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Não autorizado. Faça login para ver notificações');
+        }
         throw new Error('Erro ao buscar notificações');
       }
 
@@ -42,6 +45,9 @@ class NotificationAPI {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          return 0; // Retornar 0 se não autenticado
+        }
         throw new Error('Erro ao buscar contagem de notificações');
       }
 
@@ -49,7 +55,7 @@ class NotificationAPI {
       return data.count;
     } catch (error) {
       console.error('Erro ao buscar contagem:', error);
-      throw error;
+      return 0; // Retornar 0 em caso de erro
     }
   }
 

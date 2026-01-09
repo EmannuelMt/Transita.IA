@@ -385,6 +385,35 @@ h2.section-title.gradient-text {
   background: var(--gray-100);
 }
 
+/* Slide-out animation for hero and slide-in for the next section */
+@keyframes hero-slide-up {
+  0% { transform: translateY(0); opacity: 1; }
+  60% { transform: translateY(-30%); opacity: .9; }
+  100% { transform: translateY(-110%); opacity: 0; }
+}
+
+@keyframes section-slide-in {
+  0% { transform: translateY(40px); opacity: 0; }
+  60% { transform: translateY(8px); opacity: .6; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.transita-hero-section.animate-exit {
+  animation: hero-slide-up 0.9s cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+/* apply to the immediate section after hero (mainly the "journey" section) */
+.transita-hero-section + section.animate-enter {
+  animation: section-slide-in 0.9s cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+/* smoother transition for elements inside the entering section */
+.transita-hero-section + section.animate-enter .container,
+.transita-hero-section + section.animate-enter .section-header,
+.transita-hero-section + section.animate-enter .journey-layout {
+  will-change: transform, opacity;
+}
+
 .video-hero-container {
   position: relative;
   width: 100%;
@@ -585,6 +614,21 @@ h1.hero-title + .hero-description,
   align-items: center;
 }
 
+/* Arredondar a logo no banner hero */
+.logo-container {
+  overflow: hidden; /* garante que o border-radius corte a imagem */
+  border-radius: 1rem; /* ajuste o valor para mais/menos arredondado */
+}
+
+.logo-image {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .logo-glow {
   position: absolute;
   width: 600px;
@@ -709,6 +753,7 @@ h1.hero-title + .hero-description,
 
 .video-demo-text h2 {
   margin-bottom: var(--space-lg);
+  color: black;
 }
 
 .video-demo-text p {
@@ -1234,6 +1279,15 @@ h1.hero-title + .hero-description,
   .values-grid {
     grid-template-columns: 1fr;
   }
+
+/* Garantir títulos e textos dos cards da seção "Nossa Jornada" em preto */
+.value-item h3,
+.value-item p,
+.journey-intro,
+.timeline-card h4,
+.timeline-card p {
+  color: black !important;
+}
 }
 
 .value-item {
@@ -1588,13 +1642,23 @@ h1.hero-title + .hero-description,
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md) 0;
-  color: var(--text-secondary);
+  color: black;
   font-size: 0.875rem;
   border-bottom: 1px solid var(--border-light);
+  background: transparent; /* remove gradient/pill */
+  border-radius: 0; /* remove pill rounding */
+  box-shadow: none; /* remove green shadow */
+  animation: none !important; /* disable float animation for plan items */
+  transform: none !important;
 }
 
 .plan-features .feature-item:last-child {
   border-bottom: none;
+}
+
+.plan-features .feature-item:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .plan-features .feature-icon {
@@ -2990,4 +3054,75 @@ section#faq.faq-section {
   border-radius: 999px;
   font-weight: 600;
   font-size: 0.875rem;
+}
+
+/* Custom colors for titles */
+.dashboard-title h2 {
+  color: black;
+}
+
+.plan-header h3 {
+  color: black;
+}
+
+.tokens-header h3 {
+  color: black;
+}
+
+.token-header h4 {
+  color: black;
+}
+
+.plans-faq h3 {
+  color: black;
+}
+
+.companies-section h3 {
+  color: black;
+}
+
+.form-header h3 {
+  color: black;
+}
+
+.contact-units h3 {
+  color: black;
+}
+
+.faq-intro h3 {
+  color: black;
+}
+
+.badge-purple {
+  color: black;
+}
+
+.card-header h3 {
+  color: black;
+}
+
+.timeline-card h4,
+.timeline-card p {
+  color: black;
+}
+
+.form-group label {
+  color: black !important;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: black !important;
+}
+
+.form-group select {
+  color: black !important;
+}
+
+.badge-green {
+  color: black !important;
+}
+
+.contact-social h3 {
+  color: black;
 }
